@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { VaccinationPanel } from '@/components/VaccinationPanel';
+import { DashboardPanel } from '@/components/DashboardPanel';
 
-export default function ScanPage() {
+export default function DashboardPage() {
   const router = useRouter();
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
@@ -23,21 +23,19 @@ export default function ScanPage() {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-12">
       <div className="mx-auto mb-8 max-w-lg text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-blue">Facility visit</p>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900">Scan &amp; vaccinate</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Look up a child by their QR passport and record a vaccination against their record.
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-blue">Facility overview</p>
+        <h1 className="mt-2 text-2xl font-bold text-slate-900">Dashboard</h1>
+        <p className="mt-1 text-sm text-slate-500">Registrations, vaccination coverage, and nutrition risk.</p>
         <div className="mt-3 flex justify-center gap-4">
           <Link href="/register" className="text-sm font-semibold text-blue underline underline-offset-4">
-            Go to Register a child →
+            Register a child →
           </Link>
-          <Link href="/dashboard" className="text-sm font-semibold text-blue underline underline-offset-4">
-            Go to Dashboard →
+          <Link href="/scan" className="text-sm font-semibold text-blue underline underline-offset-4">
+            Scan &amp; vaccinate →
           </Link>
         </div>
       </div>
-      <VaccinationPanel accessToken={accessToken} />
+      <DashboardPanel accessToken={accessToken} />
     </main>
   );
 }

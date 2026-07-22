@@ -28,9 +28,14 @@ export default function RegisterPage() {
         <p className="text-xs font-semibold uppercase tracking-widest text-blue">New registration</p>
         <h1 className="mt-2 text-2xl font-bold text-slate-900">Register a child</h1>
         <p className="mt-1 text-sm text-slate-500">Issues a Child ID and QR passport immediately.</p>
-        <Link href="/scan" className="mt-3 inline-block text-sm font-semibold text-blue underline underline-offset-4">
-          Go to Scan &amp; vaccinate →
-        </Link>
+        <div className="mt-3 flex justify-center gap-4">
+          <Link href="/scan" className="text-sm font-semibold text-blue underline underline-offset-4">
+            Go to Scan &amp; vaccinate →
+          </Link>
+          <Link href="/dashboard" className="text-sm font-semibold text-blue underline underline-offset-4">
+            Go to Dashboard →
+          </Link>
+        </div>
       </div>
       <RegisterChildForm accessToken={accessToken} />
     </main>

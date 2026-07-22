@@ -5,6 +5,8 @@ import { RedisModule } from './common/redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { ChildrenModule } from './children/children.module';
 import { VaccinationsModule } from './vaccinations/vaccinations.module';
+import { GrowthModule } from './growth/growth.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { VaccinationsModule } from './vaccinations/vaccinations.module';
     AuthModule,
     ChildrenModule,
     VaccinationsModule,
+    GrowthModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

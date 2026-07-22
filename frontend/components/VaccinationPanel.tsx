@@ -2,20 +2,30 @@
 
 import { useState, type FormEvent, type ReactNode } from 'react';
 import {
+  getGrowthHistory,
   getVaccinationHistory,
   lookupChildByQr,
+  recordGrowth,
   recordVaccination,
   VACCINE_CODES,
   type ChildSummary,
+  type GrowthRecord,
   type VaccinationRecord,
 } from '@/lib/api';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+const NUTRITIONAL_STATUS_LABEL: Record<string, string> = {
+  normal: 'Normal',
+  moderate_acute_malnutrition: 'Moderate acute malnutrition',
+  severe_acute_malnutrition: 'Severe acute malnutrition',
+};
+
 export function VaccinationPanel({ accessToken }: { accessToken: string }) {
   const [qrToken, setQrToken] = useState('');
   const [child, setChild] = useState<ChildSummary | null>(null);
   const [history, setHistory] = useState<VaccinationRecord[]>([]);
+  const [growthHistory, setGrowthHistory] = useState<GrowthRecord[]>([]);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [looking, setLooking] = useState(false);
 
@@ -28,6 +38,15 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
   const [recording, setRecording] = useState(false);
   const [justRecorded, setJustRecorded] = useState(false);
 
+  const [visitDate, setVisitDate] = useState(today());
+  const [weightKg, setWeightKg] = useState('');
+  const [heightCm, setHeightCm] = useState('');
+  const [muacCm, setMuacCm] = useState('');
+  const [growthNotes, setGrowthNotes] = useState('');
+  const [growthError, setGrowthError] = useState<string | null>(null);
+  const [savingGrowth, setSavingGrowth] = useState(false);
+  const [justSavedGrowth, setJustSavedGrowth] = useState(false);
+
   async function handleLookup(e: FormEvent) {
     e.preventDefault();
     if (!qrToken.trim()) return;
@@ -35,11 +54,16 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
     setLookupError(null);
     setChild(null);
     setJustRecorded(false);
+    setJustSavedGrowth(false);
     try {
       const summary = await lookupChildByQr(qrToken.trim(), accessToken);
       setChild(summary);
-      const records = await getVaccinationHistory(summary.childId, accessToken);
-      setHistory(records);
+      const [vaccinations, growth] = await Promise.all([
+        getVaccinationHistory(summary.childId, accessToken),
+        getGrowthHistory(summary.childId, accessToken),
+      ]);
+      setHistory(vaccinations);
+      setGrowthHistory(growth);
     } catch (err) {
       setLookupError(err instanceof Error ? err.message : 'Lookup failed.');
     } finally {
@@ -77,6 +101,39 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
     }
   }
 
+  async function handleRecordGrowth(e: FormEvent) {
+    e.preventDefault();
+    if (!child) return;
+    setSavingGrowth(true);
+    setGrowthError(null);
+    try {
+      await recordGrowth(
+        {
+          childId: child.childId,
+          visitDate,
+          weightKg: weightKg ? Number(weightKg) : undefined,
+          heightCm: heightCm ? Number(heightCm) : undefined,
+          muacCm: muacCm ? Number(muacCm) : undefined,
+          notes: growthNotes || undefined,
+        },
+        accessToken,
+      );
+      const records = await getGrowthHistory(child.childId, accessToken);
+      setGrowthHistory(records);
+      setWeightKg('');
+      setHeightCm('');
+      setMuacCm('');
+      setGrowthNotes('');
+      setJustSavedGrowth(true);
+    } catch (err) {
+      setGrowthError(err instanceof Error ? err.message : 'Could not record the measurement.');
+    } finally {
+      setSavingGrowth(false);
+    }
+  }
+
+  const latestGrowth = growthHistory[growthHistory.length - 1];
+
   return (
     <div className="mx-auto w-full max-w-lg space-y-6">
       <form
@@ -100,11 +157,20 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
 
       {child && (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-[10px] uppercase tracking-wide text-slate-400">Child</p>
-          <p className="text-lg font-bold text-slate-900">{child.fullName}</p>
-          <p className="text-sm text-slate-500">
-            DOB {child.dateOfBirth} · {child.sex === 'female' ? 'Female' : 'Male'}
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-slate-400">Child</p>
+              <p className="text-lg font-bold text-slate-900">{child.fullName}</p>
+              <p className="text-sm text-slate-500">
+                DOB {child.dateOfBirth} · {child.sex === 'female' ? 'Female' : 'Male'}
+              </p>
+            </div>
+            {latestGrowth?.nutritionalStatus && latestGrowth.nutritionalStatus !== 'normal' && (
+              <span className="whitespace-nowrap rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-600">
+                {NUTRITIONAL_STATUS_LABEL[latestGrowth.nutritionalStatus]}
+              </span>
+            )}
+          </div>
 
           <div className="mt-5">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -184,6 +250,68 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
 
             <button type="submit" disabled={recording} className="btn-primary">
               {recording ? 'Recording…' : 'Record vaccination'}
+            </button>
+          </form>
+
+          <div className="mt-6 border-t border-slate-100 pt-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Growth history
+            </p>
+            {growthHistory.length === 0 ? (
+              <p className="text-sm text-slate-400">No measurements recorded yet.</p>
+            ) : (
+              <ul className="space-y-1">
+                {growthHistory.map((g) => (
+                  <li
+                    key={g.growthRecordId}
+                    className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm"
+                  >
+                    <span className="font-semibold text-slate-700">
+                      {[
+                        g.weightKg ? `${g.weightKg} kg` : null,
+                        g.heightCm ? `${g.heightCm} cm` : null,
+                        g.muacCm ? `MUAC ${g.muacCm} cm` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                    <span className="text-slate-500">{g.visitDate}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <form onSubmit={handleRecordGrowth} className="mt-6 space-y-4 border-t border-slate-100 pt-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Record growth measurement
+            </p>
+
+            <Field label="Visit date">
+              <input className="input" type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} />
+            </Field>
+
+            <div className="grid grid-cols-3 gap-4">
+              <Field label="Weight (kg)">
+                <input className="input" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
+              </Field>
+              <Field label="Height (cm)">
+                <input className="input" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
+              </Field>
+              <Field label="MUAC (cm)">
+                <input className="input" value={muacCm} onChange={(e) => setMuacCm(e.target.value)} />
+              </Field>
+            </div>
+
+            <Field label="Notes">
+              <input className="input" value={growthNotes} onChange={(e) => setGrowthNotes(e.target.value)} />
+            </Field>
+
+            {growthError && <p className="text-sm font-medium text-red-600">{growthError}</p>}
+            {justSavedGrowth && <p className="text-sm font-medium text-green">Measurement recorded.</p>}
+
+            <button type="submit" disabled={savingGrowth} className="btn-primary">
+              {savingGrowth ? 'Saving…' : 'Save measurement'}
             </button>
           </form>
         </div>

@@ -142,6 +142,80 @@ export async function getVaccinationHistory(
   return res.json();
 }
 
+export type NutritionalStatus = 'normal' | 'moderate_acute_malnutrition' | 'severe_acute_malnutrition';
+
+export interface RecordGrowthPayload {
+  childId: string;
+  visitDate?: string;
+  weightKg?: number;
+  heightCm?: number;
+  muacCm?: number;
+  notes?: string;
+}
+
+export interface GrowthRecord {
+  growthRecordId: string;
+  visitDate: string;
+  weightKg?: number;
+  heightCm?: number;
+  muacCm?: number;
+  nutritionalStatus?: NutritionalStatus;
+  notes?: string;
+}
+
+export async function recordGrowth(payload: RecordGrowthPayload, accessToken: string): Promise<GrowthRecord> {
+  const res = await fetch(`${API_BASE_URL}/growth`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not record the measurement. Please try again.');
+  }
+
+  return res.json();
+}
+
+export async function getGrowthHistory(childId: string, accessToken: string): Promise<GrowthRecord[]> {
+  const res = await fetch(`${API_BASE_URL}/growth/child/${childId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not load growth history.');
+  }
+
+  return res.json();
+}
+
+export interface DashboardSummary {
+  facilityName: string | null;
+  childrenRegistered: number;
+  vaccinationsGiven: number;
+  vaccinationsByVaccine: { vaccineCode: string; count: number }[];
+  malnutritionRiskCount: number;
+  overdueVaccinations: { childId: string; fullName: string; vaccineCode: string; dueSince: string }[];
+}
+
+export async function getDashboardSummary(accessToken: string): Promise<DashboardSummary> {
+  const res = await fetch(`${API_BASE_URL}/dashboard/summary`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not load the dashboard.');
+  }
+
+  return res.json();
+}
+
 export interface LoginResponse {
   accessToken: string;
   user: { userId: string; fullName: string; role: string; facilityId?: string };
