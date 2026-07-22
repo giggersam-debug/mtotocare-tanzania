@@ -16,4 +16,10 @@ export class DashboardController {
   summary(@CurrentUser() user: AuthenticatedUser) {
     return this.dashboardService.summary(user);
   }
+
+  @Get('patients')
+  @Roles('nurse', 'doctor', 'nutritionist', 'pharmacist', 'ministry', 'administrator')
+  patients(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboardService.patientList(user);
+  }
 }

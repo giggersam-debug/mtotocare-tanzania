@@ -94,6 +94,75 @@ export class DashboardService {
     };
   }
 
+  /** Health Worker portal: facility patient list with quick-triage flags. */
+  async patientList(user: AuthenticatedUser) {
+    if (!user.facilityId) {
+      throw new ForbiddenException('Your account is not linked to a facility');
+    }
+
+    const staff = await this.users.find({ where: { facility: { facilityId: user.facilityId } } });
+    const staffIds = staff.map((u) => u.userId);
+    const children = staffIds.length ? await this.children.find({ where: { createdBy: In(staffIds) } }) : [];
+
+    const vaccinations = await this.vaccinations.find({
+      where: { facility: { facilityId: user.facilityId } },
+      relations: ['child'],
+    });
+    const growthRecords = await this.growthRecords.find({
+      where: { facility: { facilityId: user.facilityId } },
+      relations: ['child'],
+    });
+
+    const givenByChild = new Map<string, Set<string>>();
+    const lastVisitByChild = new Map<string, string>();
+    for (const v of vaccinations) {
+      const id = v.child.childId;
+      const set = givenByChild.get(id) ?? new Set<string>();
+      set.add(v.vaccineCode);
+      givenByChild.set(id, set);
+      const prev = lastVisitByChild.get(id);
+      if (!prev || v.administeredAt > prev) lastVisitByChild.set(id, v.administeredAt);
+    }
+
+    const latestGrowthByChild = new Map<string, GrowthRecord>();
+    for (const g of growthRecords) {
+      const id = g.child.childId;
+      const existing = latestGrowthByChild.get(id);
+      if (!existing || g.visitDate > existing.visitDate) latestGrowthByChild.set(id, g);
+      const prev = lastVisitByChild.get(id);
+      if (!prev || g.visitDate > prev) lastVisitByChild.set(id, g.visitDate);
+    }
+
+    const todayMs = Date.now();
+
+    return children
+      .map((child) => {
+        const dobMs = new Date(child.dateOfBirth).getTime();
+        const ageDays = Math.floor((todayMs - dobMs) / DAY_MS);
+        const given = givenByChild.get(child.childId) ?? new Set<string>();
+        const hasOverdue = EPI_SCHEDULE.some((item) => ageDays >= item.dueAtDays && !given.has(item.code));
+        const growthStatus = latestGrowthByChild.get(child.childId)?.nutritionalStatus;
+
+        const flags: string[] = [];
+        if (hasOverdue) flags.push('Overdue visit');
+        if (growthStatus && growthStatus !== 'normal') flags.push('Malnutrition risk');
+
+        return {
+          childId: child.childId,
+          fullName: child.fullName,
+          dateOfBirth: child.dateOfBirth,
+          lastVisit: lastVisitByChild.get(child.childId) ?? null,
+          flags,
+        };
+      })
+      .sort((a, b) => {
+        if (!a.lastVisit) return 1;
+        if (!b.lastVisit) return -1;
+        return a.lastVisit < b.lastVisit ? 1 : -1;
+      })
+      .slice(0, 50);
+  }
+
   private computeOverdue(children: Child[], vaccinations: Vaccination[]) {
     const givenByChild = new Map<string, Set<string>>();
     for (const v of vaccinations) {

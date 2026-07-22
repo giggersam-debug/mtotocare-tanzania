@@ -10,6 +10,7 @@ const LINKS = [
   { href: '/children', label: 'Child Lookup' },
   { href: '/scan', label: 'Vaccinations' },
   { href: '/parent', label: 'Parent Portal' },
+  { href: '/health-worker', label: 'Health Worker' },
   { href: '/dashboard', label: 'Dashboard' },
 ];
 

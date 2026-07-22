@@ -313,6 +313,27 @@ export async function parentLookup(qrToken: string, phone: string): Promise<Pare
   return res.json();
 }
 
+export interface PatientListEntry {
+  childId: string;
+  fullName: string;
+  dateOfBirth: string;
+  lastVisit: string | null;
+  flags: string[];
+}
+
+export async function getPatientList(accessToken: string): Promise<PatientListEntry[]> {
+  const res = await fetch(`${API_BASE_URL}/dashboard/patients`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not load the patient list.');
+  }
+
+  return res.json();
+}
+
 export interface LoginResponse {
   accessToken: string;
   user: { userId: string; fullName: string; role: string; facilityId?: string };
