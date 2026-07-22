@@ -172,6 +172,7 @@ export interface VaccinationRecord {
   administeredAt: string;
   batchNumber?: string;
   notes?: string;
+  administeredByName?: string | null;
 }
 
 export async function recordVaccination(
@@ -211,6 +212,36 @@ export async function getVaccinationHistory(
   return res.json();
 }
 
+export interface UpdateVaccinationPayload {
+  vaccineCode?: (typeof VACCINE_CODES)[number];
+  doseNumber?: number;
+  administeredAt?: string;
+  batchNumber?: string;
+  notes?: string;
+}
+
+export async function updateVaccination(
+  vaccinationId: string,
+  payload: UpdateVaccinationPayload,
+  accessToken: string,
+): Promise<VaccinationRecord> {
+  const res = await fetch(`${API_BASE_URL}/vaccinations/${vaccinationId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not update the vaccination.');
+  }
+
+  return res.json();
+}
+
 export type NutritionalStatus = 'normal' | 'moderate_acute_malnutrition' | 'severe_acute_malnutrition';
 
 export interface RecordGrowthPayload {
@@ -230,6 +261,7 @@ export interface GrowthRecord {
   muacCm?: number;
   nutritionalStatus?: NutritionalStatus;
   notes?: string;
+  recordedByName?: string | null;
 }
 
 export async function recordGrowth(payload: RecordGrowthPayload, accessToken: string): Promise<GrowthRecord> {
@@ -258,6 +290,36 @@ export async function getGrowthHistory(childId: string, accessToken: string): Pr
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.message ?? 'Could not load growth history.');
+  }
+
+  return res.json();
+}
+
+export interface UpdateGrowthPayload {
+  visitDate?: string;
+  weightKg?: number;
+  heightCm?: number;
+  muacCm?: number;
+  notes?: string;
+}
+
+export async function updateGrowth(
+  growthRecordId: string,
+  payload: UpdateGrowthPayload,
+  accessToken: string,
+): Promise<GrowthRecord> {
+  const res = await fetch(`${API_BASE_URL}/growth/${growthRecordId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not update the measurement.');
   }
 
   return res.json();

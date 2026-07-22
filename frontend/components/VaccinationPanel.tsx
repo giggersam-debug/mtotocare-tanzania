@@ -189,7 +189,10 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
                       {v.vaccineCode}
                       {v.doseNumber ? ` · dose ${v.doseNumber}` : ''}
                     </span>
-                    <span className="text-slate-500">{v.administeredAt}</span>
+                    <span className="text-right text-xs text-slate-500">
+                      {v.administeredAt}
+                      {v.administeredByName && <span className="block text-slate-400">by {v.administeredByName}</span>}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -275,7 +278,10 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
                         .filter(Boolean)
                         .join(' · ')}
                     </span>
-                    <span className="text-slate-500">{g.visitDate}</span>
+                    <span className="text-right text-xs text-slate-500">
+                      {g.visitDate}
+                      {g.recordedByName && <span className="block text-slate-400">by {g.recordedByName}</span>}
+                    </span>
                   </li>
                 ))}
               </ul>

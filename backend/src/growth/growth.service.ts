@@ -1,9 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { GrowthRecord, NutritionalStatus } from './entities/growth-record.entity';
 import { Child } from '../children/entities/child.entity';
+import { User } from '../auth/entities/user.entity';
 import { RecordGrowthDto } from './dto/record-growth.dto';
+import { UpdateGrowthDto } from './dto/update-growth.dto';
 import type { AuthenticatedUser } from '../auth/types';
 
 // WHO/UNICEF simplified MUAC screen for acute malnutrition (children 6-59 months).
@@ -19,6 +21,7 @@ export class GrowthService {
   constructor(
     @InjectRepository(GrowthRecord) private readonly growthRecords: Repository<GrowthRecord>,
     @InjectRepository(Child) private readonly children: Repository<Child>,
+    @InjectRepository(User) private readonly users: Repository<User>,
   ) {}
 
   async record(dto: RecordGrowthDto, user: AuthenticatedUser) {
@@ -45,9 +48,35 @@ export class GrowthService {
   }
 
   async historyForChild(childId: string) {
-    return this.growthRecords.find({
+    const records = await this.growthRecords.find({
       where: { child: { childId } },
       order: { visitDate: 'ASC' },
     });
+    return this.withRecorderNames(records);
+  }
+
+  async update(growthRecordId: string, dto: UpdateGrowthDto) {
+    const record = await this.growthRecords.findOne({ where: { growthRecordId } });
+    if (!record) throw new NotFoundException('No growth record found for that ID');
+
+    if (dto.visitDate !== undefined) record.visitDate = dto.visitDate;
+    if (dto.weightKg !== undefined) record.weightKg = dto.weightKg;
+    if (dto.heightCm !== undefined) record.heightCm = dto.heightCm;
+    if (dto.muacCm !== undefined) {
+      record.muacCm = dto.muacCm;
+      record.nutritionalStatus = classifyMuac(dto.muacCm);
+    }
+    if (dto.notes !== undefined) record.notes = dto.notes;
+
+    return this.growthRecords.save(record);
+  }
+
+  /** Attaches the recording staff member's name to each row for display. */
+  private async withRecorderNames(records: GrowthRecord[]) {
+    const userIds = [...new Set(records.map((r) => r.recordedBy))];
+    const staff = userIds.length ? await this.users.find({ where: { userId: In(userIds) } }) : [];
+    const nameById = new Map(staff.map((u) => [u.userId, u.fullName]));
+
+    return records.map((r) => ({ ...r, recordedByName: nameById.get(r.recordedBy) ?? null }));
   }
 }

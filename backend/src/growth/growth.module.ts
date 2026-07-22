@@ -4,9 +4,10 @@ import { GrowthController } from './growth.controller';
 import { GrowthService } from './growth.service';
 import { GrowthRecord } from './entities/growth-record.entity';
 import { Child } from '../children/entities/child.entity';
+import { User } from '../auth/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([GrowthRecord, Child])],
+  imports: [TypeOrmModule.forFeature([GrowthRecord, Child, User])],
   controllers: [GrowthController],
   providers: [GrowthService],
   exports: [GrowthService],

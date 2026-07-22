@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { GrowthService } from './growth.service';
 import { RecordGrowthDto } from './dto/record-growth.dto';
+import { UpdateGrowthDto } from './dto/update-growth.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -22,5 +23,11 @@ export class GrowthController {
   @Roles('nurse', 'doctor', 'nutritionist', 'pharmacist')
   history(@Param('childId') childId: string) {
     return this.growthService.historyForChild(childId);
+  }
+
+  @Patch(':growthRecordId')
+  @Roles('nurse', 'doctor', 'nutritionist')
+  update(@Param('growthRecordId') growthRecordId: string, @Body() dto: UpdateGrowthDto) {
+    return this.growthService.update(growthRecordId, dto);
   }
 }
