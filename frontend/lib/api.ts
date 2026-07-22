@@ -286,7 +286,13 @@ export async function getDashboardSummary(accessToken: string): Promise<Dashboar
 }
 
 export interface ParentLookupResponse {
-  child: { childId: string; fullName: string; dateOfBirth: string; sex: 'male' | 'female' };
+  child: {
+    childId: string;
+    fullName: string;
+    dateOfBirth: string;
+    sex: 'male' | 'female';
+    whatsappOptIn: boolean;
+  };
   vaccinations: VaccinationRecord[];
   growth: GrowthRecord[];
   schedule: ScheduleEntry[];

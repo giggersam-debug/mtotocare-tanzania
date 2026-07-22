@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { parentLookup, type ParentLookupResponse, type ScheduleEntry } from '@/lib/api';
 
 const STATUS_STYLE: Record<ScheduleEntry['status'], string> = {
@@ -16,6 +17,53 @@ const STATUS_LABEL: Record<ScheduleEntry['status'], string> = {
   overdue: 'Overdue',
   not_yet_due: 'Not yet due',
 };
+
+function downloadHealthCertificate(result: ParentLookupResponse) {
+  const win = window.open('', '_blank');
+  if (!win) return;
+
+  const completed = result.schedule.filter((s) => s.status === 'completed');
+
+  win.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Health Certificate — ${result.child.fullName}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; color: #1e293b; }
+          h1 { color: #2E7D32; margin-bottom: 4px; }
+          .sub { color: #64748b; margin-bottom: 24px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+          th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+          th { color: #64748b; text-transform: uppercase; font-size: 11px; }
+          .footer { margin-top: 32px; font-size: 12px; color: #94a3b8; }
+        </style>
+      </head>
+      <body>
+        <h1>MtotoCare Tanzania</h1>
+        <p class="sub">Digital Child Health Certificate</p>
+        <p><strong>${result.child.fullName}</strong></p>
+        <p>${result.child.sex === 'female' ? 'Female' : 'Male'} · Born ${result.child.dateOfBirth}</p>
+        <p>Health ID: ${result.child.childId.slice(0, 8).toUpperCase()}</p>
+
+        <h3>Completed vaccinations</h3>
+        <table>
+          <thead><tr><th>Vaccine</th><th>Date</th></tr></thead>
+          <tbody>
+            ${completed
+              .map((s) => `<tr><td>${s.label}</td><td>${s.dueDate}</td></tr>`)
+              .join('')}
+          </tbody>
+        </table>
+
+        <p class="footer">Generated ${new Date().toISOString().slice(0, 10)} · MtotoCare Tanzania Digital Child Health Record</p>
+      </body>
+    </html>
+  `);
+  win.document.close();
+  win.focus();
+  win.print();
+}
 
 export function ParentPortalPanel() {
   const [qrToken, setQrToken] = useState('');
@@ -40,6 +88,8 @@ export function ParentPortalPanel() {
   }
 
   const upcoming = result?.schedule.filter((s) => s.status === 'due' || s.status === 'overdue') ?? [];
+  const chartData =
+    result?.growth.filter((g) => g.weightKg !== undefined).map((g) => ({ date: g.visitDate, weight: g.weightKg })) ?? [];
 
   return (
     <div className="mx-auto w-full max-w-lg space-y-6">
@@ -86,6 +136,22 @@ export function ParentPortalPanel() {
             {result.child.sex === 'female' ? 'Female' : 'Male'} · Born {result.child.dateOfBirth}
           </p>
 
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              onClick={() => downloadHealthCertificate(result)}
+              className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              Download Health Certificate
+            </button>
+            <span
+              className={`rounded-lg px-3 py-2 text-xs font-semibold ${
+                result.child.whatsappOptIn ? 'bg-green/10 text-green' : 'bg-slate-100 text-slate-500'
+              }`}
+            >
+              WhatsApp reminders {result.child.whatsappOptIn ? 'on' : 'off'}
+            </span>
+          </div>
+
           <div className="mt-5">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
               Upcoming appointments
@@ -110,6 +176,20 @@ export function ParentPortalPanel() {
               </ul>
             )}
           </div>
+
+          {chartData.length > 1 && (
+            <div className="mt-5">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Growth chart</p>
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={chartData}>
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} unit="kg" width={35} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="weight" stroke="#2E7D32" strokeWidth={2} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
 
           <div className="mt-5">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">

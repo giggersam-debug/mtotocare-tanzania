@@ -26,6 +26,7 @@ export class ParentService {
         fullName: child.fullName,
         dateOfBirth: child.dateOfBirth,
         sex: child.sex,
+        whatsappOptIn: child.guardian?.whatsappOptIn ?? false,
       },
       vaccinations,
       growth,
