@@ -9,5 +9,6 @@ import { Child } from '../children/entities/child.entity';
   imports: [TypeOrmModule.forFeature([Vaccination, Child])],
   controllers: [VaccinationsController],
   providers: [VaccinationsService],
+  exports: [VaccinationsService],
 })
 export class VaccinationsModule {}

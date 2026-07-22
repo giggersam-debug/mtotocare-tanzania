@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { getDashboardSummary, type DashboardSummary } from '@/lib/api';
 
 export function DashboardPanel({ accessToken }: { accessToken: string }) {
@@ -44,16 +45,18 @@ export function DashboardPanel({ accessToken }: { accessToken: string }) {
         {summary.vaccinationsByVaccine.length === 0 ? (
           <p className="text-sm text-slate-400">No vaccinations recorded yet.</p>
         ) : (
-          <ul className="grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3">
-            {summary.vaccinationsByVaccine
-              .sort((a, b) => b.count - a.count)
-              .map((v) => (
-                <li key={v.vaccineCode} className="flex items-center justify-between text-sm">
-                  <span className="text-slate-600">{v.vaccineCode}</span>
-                  <span className="font-semibold text-slate-900">{v.count}</span>
-                </li>
-              ))}
-          </ul>
+          <ResponsiveContainer width="100%" height={Math.max(220, summary.vaccinationsByVaccine.length * 28)}>
+            <BarChart
+              data={[...summary.vaccinationsByVaccine].sort((a, b) => b.count - a.count)}
+              layout="vertical"
+              margin={{ left: 8, right: 16 }}
+            >
+              <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+              <YAxis type="category" dataKey="vaccineCode" width={110} tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#2E7D32" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         )}
       </div>
 

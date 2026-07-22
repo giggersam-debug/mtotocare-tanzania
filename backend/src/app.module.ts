@@ -7,6 +7,7 @@ import { ChildrenModule } from './children/children.module';
 import { VaccinationsModule } from './vaccinations/vaccinations.module';
 import { GrowthModule } from './growth/growth.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { ParentModule } from './parent/parent.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     VaccinationsModule,
     GrowthModule,
     DashboardModule,
+    ParentModule,
   ],
 })
 export class AppModule {}

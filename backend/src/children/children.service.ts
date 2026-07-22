@@ -1,11 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Child } from './entities/child.entity';
 import { Guardian } from './entities/guardian.entity';
+import { Vaccination } from '../vaccinations/entities/vaccination.entity';
 import { CreateChildDto } from './dto/create-child.dto';
 import { RedisService } from '../common/redis/redis.service';
 import { QrService } from '../common/qr/qr.service';
+import { computeSchedule } from '../common/epi-schedule';
 
 // Hot cache TTL for the scan-lookup path. Postgres stays the source of
 // truth; this just saves a round trip on every facility visit.
@@ -16,6 +18,7 @@ export class ChildrenService {
   constructor(
     @InjectRepository(Child) private readonly children: Repository<Child>,
     @InjectRepository(Guardian) private readonly guardians: Repository<Guardian>,
+    @InjectRepository(Vaccination) private readonly vaccinations: Repository<Vaccination>,
     private readonly dataSource: DataSource,
     private readonly redis: RedisService,
     private readonly qr: QrService,
@@ -104,5 +107,76 @@ export class ChildrenService {
       sex: child.sex,
       guardianPhone: child.guardian?.phone,
     };
+  }
+
+  /** Staff-facing search by child name or (partial) health ID. */
+  async search(query: string) {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+
+    const like = `%${trimmed}%`;
+    const children = await this.children
+      .createQueryBuilder('child')
+      .leftJoinAndSelect('child.guardian', 'guardian')
+      .where('child.full_name ILIKE :like', { like })
+      .orWhere('CAST(child.child_id AS TEXT) ILIKE :like', { like })
+      .orderBy('child.full_name', 'ASC')
+      .limit(20)
+      .getMany();
+
+    return children.map((child) => ({
+      childId: child.childId,
+      fullName: child.fullName,
+      dateOfBirth: child.dateOfBirth,
+      sex: child.sex,
+      region: child.region,
+      guardianPhone: child.guardian?.phone,
+    }));
+  }
+
+  /** Full bio for the Child Profile page. */
+  async getById(childId: string) {
+    const child = await this.children.findOne({ where: { childId }, relations: ['guardian'] });
+    if (!child) throw new NotFoundException('No child found for that ID');
+
+    return {
+      childId: child.childId,
+      fullName: child.fullName,
+      dateOfBirth: child.dateOfBirth,
+      sex: child.sex,
+      birthWeightKg: child.birthWeightKg,
+      birthHeightCm: child.birthHeightCm,
+      region: child.region,
+      district: child.district,
+      ward: child.ward,
+      village: child.village,
+      guardian: child.guardian
+        ? {
+            fullName: child.guardian.fullName,
+            relation: child.guardian.relation,
+            phone: child.guardian.phone,
+          }
+        : undefined,
+    };
+  }
+
+  /** Public Parent Portal access: QR token + guardian phone must both match. */
+  async verifyGuardianAccess(qrToken: string, phone: string) {
+    const child = await this.children.findOne({ where: { qrToken }, relations: ['guardian'] });
+    if (!child || !child.guardian || child.guardian.phone.trim() !== phone.trim()) {
+      throw new UnauthorizedException('We could not verify that phone number for this health ID.');
+    }
+    return child;
+  }
+
+  /** EPI schedule status (completed/due/overdue/not_yet_due) for the Child Profile tracker. */
+  async scheduleForChild(childId: string) {
+    const child = await this.children.findOne({ where: { childId } });
+    if (!child) throw new NotFoundException('No child found for that ID');
+
+    const given = await this.vaccinations.find({ where: { child: { childId } } });
+    const givenCodes = new Set(given.map((v) => v.vaccineCode));
+
+    return computeSchedule(child.dateOfBirth, givenCodes);
   }
 }

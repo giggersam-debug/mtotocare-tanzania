@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { VaccinationPanel } from '@/components/VaccinationPanel';
+import { useParams, useRouter } from 'next/navigation';
+import { ChildProfilePanel } from '@/components/ChildProfilePanel';
 
-export default function ScanPage() {
+export default function ChildProfilePage() {
   const router = useRouter();
+  const params = useParams<{ childId: string }>();
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,13 +23,10 @@ export default function ScanPage() {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-12">
       <div className="mx-auto mb-8 max-w-lg text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-blue">Facility visit</p>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900">Scan &amp; vaccinate</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Look up a child by their QR passport and record a vaccination against their record.
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-blue">Child Profile</p>
+        <h1 className="mt-2 text-2xl font-bold text-slate-900">Full record</h1>
       </div>
-      <VaccinationPanel accessToken={accessToken} />
+      <ChildProfilePanel childId={params.childId} accessToken={accessToken} />
     </main>
   );
 }

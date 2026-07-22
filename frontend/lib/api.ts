@@ -64,6 +64,75 @@ export async function lookupChildByQr(qrToken: string, accessToken: string): Pro
   return res.json();
 }
 
+export interface ChildSearchResult {
+  childId: string;
+  fullName: string;
+  dateOfBirth: string;
+  sex: 'male' | 'female';
+  region?: string;
+  guardianPhone?: string;
+}
+
+export async function searchChildren(query: string, accessToken: string): Promise<ChildSearchResult[]> {
+  const res = await fetch(`${API_BASE_URL}/children/search?q=${encodeURIComponent(query)}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Search failed.');
+  }
+
+  return res.json();
+}
+
+export interface ChildProfile {
+  childId: string;
+  fullName: string;
+  dateOfBirth: string;
+  sex: 'male' | 'female';
+  birthWeightKg?: number;
+  birthHeightCm?: number;
+  region?: string;
+  district?: string;
+  ward?: string;
+  village?: string;
+  guardian?: { fullName: string; relation: string; phone: string };
+}
+
+export async function getChildProfile(childId: string, accessToken: string): Promise<ChildProfile> {
+  const res = await fetch(`${API_BASE_URL}/children/${childId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not load this child.');
+  }
+
+  return res.json();
+}
+
+export interface ScheduleEntry {
+  code: string;
+  label: string;
+  dueDate: string;
+  status: 'completed' | 'due' | 'overdue' | 'not_yet_due';
+}
+
+export async function getChildSchedule(childId: string, accessToken: string): Promise<ScheduleEntry[]> {
+  const res = await fetch(`${API_BASE_URL}/children/${childId}/schedule`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not load the vaccination schedule.');
+  }
+
+  return res.json();
+}
+
 export const VACCINE_CODES = [
   'BCG',
   'OPV0',
@@ -211,6 +280,28 @@ export async function getDashboardSummary(accessToken: string): Promise<Dashboar
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.message ?? 'Could not load the dashboard.');
+  }
+
+  return res.json();
+}
+
+export interface ParentLookupResponse {
+  child: { childId: string; fullName: string; dateOfBirth: string; sex: 'male' | 'female' };
+  vaccinations: VaccinationRecord[];
+  growth: GrowthRecord[];
+  schedule: ScheduleEntry[];
+}
+
+export async function parentLookup(qrToken: string, phone: string): Promise<ParentLookupResponse> {
+  const res = await fetch(`${API_BASE_URL}/parent/lookup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ qrToken, phone }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'We could not find a matching record.');
   }
 
   return res.json();
