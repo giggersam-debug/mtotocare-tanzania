@@ -177,17 +177,23 @@ export function ParentPortalPanel() {
             )}
           </div>
 
-          {chartData.length > 1 && (
+          {chartData.length > 0 && (
             <div className="mt-5">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Growth chart</p>
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={chartData}>
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} unit="kg" width={35} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="weight" stroke="#2E7D32" strokeWidth={2} dot={{ r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
+              {chartData.length === 1 ? (
+                <p className="text-sm text-slate-400">
+                  One measurement so far ({chartData[0].weight} kg on {chartData[0].date}).
+                </p>
+              ) : (
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={chartData}>
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} unit="kg" width={35} domain={['dataMin - 1', 'dataMax + 1']} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="weight" stroke="#2E7D32" strokeWidth={2} dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
           )}
 

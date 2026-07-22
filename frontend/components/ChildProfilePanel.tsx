@@ -111,19 +111,26 @@ export function ChildProfilePanel({ childId, accessToken }: { childId: string; a
         )}
       </div>
 
-      {chartData.length > 1 && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-sm font-bold text-slate-900">Growth chart — weight over time</h3>
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-sm font-bold text-slate-900">Growth chart — weight over time</h3>
+        {chartData.length === 0 ? (
+          <p className="text-sm text-slate-400">No weight measurements recorded yet.</p>
+        ) : chartData.length === 1 ? (
+          <p className="text-sm text-slate-400">
+            One measurement so far ({chartData[0].weight} kg on {chartData[0].date}) — record another visit to see a
+            trend line.
+          </p>
+        ) : (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={chartData}>
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} unit="kg" width={40} />
+              <YAxis tick={{ fontSize: 11 }} unit="kg" width={40} domain={['dataMin - 1', 'dataMax + 1']} />
               <Tooltip />
               <Line type="monotone" dataKey="weight" stroke="#2E7D32" strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-sm font-bold text-slate-900">Vaccination tracker</h3>
