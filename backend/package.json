@@ -6,7 +6,7 @@
     "build": "nest build",
     "start": "node dist/main",
     "start:dev": "nest start --watch",
-    "migrate": "psql \"$DATABASE_URL\" -f migrations/001_children_registry.sql && psql \"$DATABASE_URL\" -f migrations/002_users_and_seed.sql && psql \"$DATABASE_URL\" -f migrations/003_vaccinations.sql && psql \"$DATABASE_URL\" -f migrations/004_growth_records.sql && psql \"$DATABASE_URL\" -f migrations/005_reminder_log.sql && psql \"$DATABASE_URL\" -f migrations/006_admin_seed.sql && psql \"$DATABASE_URL\" -f migrations/007_staff_phone.sql && psql \"$DATABASE_URL\" -f migrations/008_staff_employee_number.sql"
+    "migrate": "psql \"$DATABASE_URL\" -f migrations/001_children_registry.sql && psql \"$DATABASE_URL\" -f migrations/002_users_and_seed.sql && psql \"$DATABASE_URL\" -f migrations/003_vaccinations.sql && psql \"$DATABASE_URL\" -f migrations/004_growth_records.sql && psql \"$DATABASE_URL\" -f migrations/005_reminder_log.sql && psql \"$DATABASE_URL\" -f migrations/006_admin_seed.sql && psql \"$DATABASE_URL\" -f migrations/007_staff_phone.sql && psql \"$DATABASE_URL\" -f migrations/008_staff_employee_number.sql && psql \"$DATABASE_URL\" -f migrations/009_dsm_dodoma_hospitals.sql"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.0",
