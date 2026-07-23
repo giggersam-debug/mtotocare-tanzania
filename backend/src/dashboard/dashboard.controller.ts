@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -21,5 +21,17 @@ export class DashboardController {
   @Roles('nurse', 'doctor', 'nutritionist', 'pharmacist', 'ministry', 'administrator')
   patients(@CurrentUser() user: AuthenticatedUser) {
     return this.dashboardService.patientList(user);
+  }
+
+  @Get('report')
+  @Roles('nurse', 'doctor', 'nutritionist', 'pharmacist', 'ministry', 'administrator')
+  report(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboardService.report(user);
+  }
+
+  @Get('calendar')
+  @Roles('nurse', 'doctor', 'nutritionist', 'pharmacist', 'ministry', 'administrator')
+  calendar(@CurrentUser() user: AuthenticatedUser, @Query('month') month?: string) {
+    return this.dashboardService.calendar(user, month);
   }
 }

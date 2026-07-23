@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getPatientList, type PatientListEntry } from '@/lib/api';
+import { getPatientList, runRemindersNow, type PatientListEntry } from '@/lib/api';
 
 function ageLabel(dateOfBirth: string): string {
   const dob = new Date(dateOfBirth).getTime();
@@ -23,6 +23,8 @@ export function HealthWorkerPanel({ accessToken }: { accessToken: string }) {
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [reminderStatus, setReminderStatus] = useState<string | null>(null);
 
   useEffect(() => {
     getPatientList(accessToken)
@@ -30,6 +32,23 @@ export function HealthWorkerPanel({ accessToken }: { accessToken: string }) {
       .catch((err) => setError(err instanceof Error ? err.message : 'Could not load the patient list.'))
       .finally(() => setLoading(false));
   }, [accessToken]);
+
+  async function handleSendReminders() {
+    setSending(true);
+    setReminderStatus(null);
+    try {
+      const result = await runRemindersNow(accessToken);
+      setReminderStatus(
+        `Sent ${result.sent} reminder${result.sent === 1 ? '' : 's'}` +
+          (result.failed ? `, ${result.failed} failed` : '') +
+          '.',
+      );
+    } catch (err) {
+      setReminderStatus(err instanceof Error ? err.message : 'Could not send reminders.');
+    } finally {
+      setSending(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     if (!query.trim()) return patients;
@@ -51,7 +70,17 @@ export function HealthWorkerPanel({ accessToken }: { accessToken: string }) {
         <Link href="/scan" className="btn-primary w-auto whitespace-nowrap px-6">
           Scan QR
         </Link>
+        <button
+          type="button"
+          onClick={handleSendReminders}
+          disabled={sending}
+          className="btn-secondary w-auto whitespace-nowrap px-6 disabled:opacity-50"
+        >
+          {sending ? 'Sending…' : 'Send Vaccine Reminders (SMS/WhatsApp)'}
+        </button>
       </div>
+
+      {reminderStatus && <p className="text-center text-sm font-medium text-slate-600">{reminderStatus}</p>}
 
       {loading && <p className="text-center text-sm text-slate-400">Loading…</p>}
       {error && <p className="text-center text-sm font-medium text-red-600">{error}</p>}

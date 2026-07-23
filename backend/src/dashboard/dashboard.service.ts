@@ -7,6 +7,7 @@ import { Vaccination } from '../vaccinations/entities/vaccination.entity';
 import { GrowthRecord } from '../growth/entities/growth-record.entity';
 import { User } from '../auth/entities/user.entity';
 import type { AuthenticatedUser } from '../auth/types';
+import { computeSchedule } from '../common/epi-schedule';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -161,6 +162,118 @@ export class DashboardService {
         return a.lastVisit < b.lastVisit ? 1 : -1;
       })
       .slice(0, 50);
+  }
+
+  /** Reports page: flat, row-level data for the admin's facility, ready for CSV export. */
+  async report(user: AuthenticatedUser) {
+    if (!user.facilityId) {
+      throw new ForbiddenException('Your account is not linked to a facility');
+    }
+
+    const facility = await this.facilities.findOne({ where: { facilityId: user.facilityId } });
+
+    const staff = await this.users.find({ where: { facility: { facilityId: user.facilityId } } });
+    const staffIds = staff.map((u) => u.userId);
+    const nameByStaffId = new Map(staff.map((u) => [u.userId, u.fullName]));
+
+    const children = staffIds.length ? await this.children.find({ where: { createdBy: In(staffIds) } }) : [];
+    const nameByChildId = new Map(children.map((c) => [c.childId, c.fullName]));
+
+    const vaccinations = await this.vaccinations.find({
+      where: { facility: { facilityId: user.facilityId } },
+      relations: ['child'],
+      order: { administeredAt: 'DESC' },
+    });
+
+    const growthRecords = await this.growthRecords.find({
+      where: { facility: { facilityId: user.facilityId } },
+      relations: ['child'],
+      order: { visitDate: 'DESC' },
+    });
+
+    return {
+      facilityName: facility?.name ?? null,
+      generatedAt: new Date().toISOString(),
+      children: children.map((c) => ({
+        childId: c.childId,
+        fullName: c.fullName,
+        dateOfBirth: c.dateOfBirth,
+        sex: c.sex,
+        region: c.region ?? null,
+      })),
+      vaccinations: vaccinations.map((v) => ({
+        childId: v.child.childId,
+        childName: nameByChildId.get(v.child.childId) ?? v.child.fullName,
+        vaccineCode: v.vaccineCode,
+        doseNumber: v.doseNumber ?? null,
+        administeredAt: v.administeredAt,
+        administeredByName: nameByStaffId.get(v.administeredBy) ?? null,
+      })),
+      growth: growthRecords.map((g) => ({
+        childId: g.child.childId,
+        childName: nameByChildId.get(g.child.childId) ?? g.child.fullName,
+        visitDate: g.visitDate,
+        weightKg: g.weightKg ?? null,
+        heightCm: g.heightCm ?? null,
+        muacCm: g.muacCm ?? null,
+        nutritionalStatus: g.nutritionalStatus ?? null,
+        recordedByName: nameByStaffId.get(g.recordedBy) ?? null,
+      })),
+    };
+  }
+
+  /** Calendar page: due/overdue vaccine visits for the facility, grouped by day, for one month. */
+  async calendar(user: AuthenticatedUser, month?: string) {
+    if (!user.facilityId) {
+      throw new ForbiddenException('Your account is not linked to a facility');
+    }
+
+    const targetMonth = month && /^\d{4}-\d{2}$/.test(month) ? month : new Date().toISOString().slice(0, 7);
+
+    const staff = await this.users.find({ where: { facility: { facilityId: user.facilityId } } });
+    const staffIds = staff.map((u) => u.userId);
+    const children = staffIds.length ? await this.children.find({ where: { createdBy: In(staffIds) } }) : [];
+
+    const vaccinations = staffIds.length
+      ? await this.vaccinations.find({ where: { facility: { facilityId: user.facilityId } }, relations: ['child'] })
+      : [];
+    const givenByChild = new Map<string, Set<string>>();
+    for (const v of vaccinations) {
+      const set = givenByChild.get(v.child.childId) ?? new Set<string>();
+      set.add(v.vaccineCode);
+      givenByChild.set(v.child.childId, set);
+    }
+
+    const byDate = new Map<
+      string,
+      { childId: string; fullName: string; vaccineCode: string; vaccineLabel: string; status: string }[]
+    >();
+
+    for (const child of children) {
+      const given = givenByChild.get(child.childId) ?? new Set<string>();
+      const schedule = computeSchedule(child.dateOfBirth, given);
+
+      for (const item of schedule) {
+        if (item.status !== 'due' && item.status !== 'overdue') continue;
+        if (!item.dueDate.startsWith(targetMonth)) continue;
+
+        const entries = byDate.get(item.dueDate) ?? [];
+        entries.push({
+          childId: child.childId,
+          fullName: child.fullName,
+          vaccineCode: item.code,
+          vaccineLabel: item.label,
+          status: item.status,
+        });
+        byDate.set(item.dueDate, entries);
+      }
+    }
+
+    const days = [...byDate.entries()]
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([date, items]) => ({ date, items }));
+
+    return { month: targetMonth, days };
   }
 
   private computeOverdue(children: Child[], vaccinations: Vaccination[]) {

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { RedisModule } from './common/redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { ChildrenModule } from './children/children.module';
@@ -8,10 +9,14 @@ import { VaccinationsModule } from './vaccinations/vaccinations.module';
 import { GrowthModule } from './growth/growth.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ParentModule } from './parent/parent.module';
+import { MessagingModule } from './messaging/messaging.module';
+import { RemindersModule } from './reminders/reminders.module';
+import { FacilitiesModule } from './facilities/facilities.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -34,6 +39,9 @@ import { ParentModule } from './parent/parent.module';
     GrowthModule,
     DashboardModule,
     ParentModule,
+    MessagingModule,
+    RemindersModule,
+    FacilitiesModule,
   ],
 })
 export class AppModule {}

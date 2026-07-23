@@ -396,9 +396,182 @@ export async function getPatientList(accessToken: string): Promise<PatientListEn
   return res.json();
 }
 
+export interface RunRemindersResponse {
+  sent: number;
+  skipped: number;
+  failed: number;
+}
+
+export async function runRemindersNow(accessToken: string): Promise<RunRemindersResponse> {
+  const res = await fetch(`${API_BASE_URL}/reminders/run-now`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not send reminders.');
+  }
+
+  return res.json();
+}
+
 export interface LoginResponse {
   accessToken: string;
   user: { userId: string; fullName: string; role: string; facilityId?: string };
+}
+
+export interface Facility {
+  facilityId: string;
+  name: string;
+  level: 'dispensary' | 'health_centre' | 'hospital';
+  region: string;
+  mohCode: string;
+}
+
+export interface CreateFacilityPayload {
+  name: string;
+  level: 'dispensary' | 'health_centre' | 'hospital';
+  region: string;
+  mohCode: string;
+}
+
+export async function listFacilities(accessToken: string): Promise<Facility[]> {
+  const res = await fetch(`${API_BASE_URL}/facilities`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not load facilities.');
+  }
+  return res.json();
+}
+
+export async function createFacility(payload: CreateFacilityPayload, accessToken: string): Promise<Facility> {
+  const res = await fetch(`${API_BASE_URL}/facilities`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not create the facility.');
+  }
+  return res.json();
+}
+
+export interface StaffSummary {
+  userId: string;
+  username: string;
+  fullName: string;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateStaffPayload {
+  username: string;
+  password: string;
+  fullName: string;
+  role: 'nurse' | 'doctor' | 'nutritionist' | 'pharmacist';
+}
+
+export async function listStaff(accessToken: string): Promise<StaffSummary[]> {
+  const res = await fetch(`${API_BASE_URL}/auth/staff`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not load staff accounts.');
+  }
+  return res.json();
+}
+
+export async function createStaff(payload: CreateStaffPayload, accessToken: string): Promise<StaffSummary> {
+  const res = await fetch(`${API_BASE_URL}/auth/staff`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not create the staff account.');
+  }
+  return res.json();
+}
+
+export async function setStaffActive(
+  userId: string,
+  isActive: boolean,
+  accessToken: string,
+): Promise<StaffSummary> {
+  const res = await fetch(`${API_BASE_URL}/auth/staff/${userId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ isActive }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not update the staff account.');
+  }
+  return res.json();
+}
+
+export interface DashboardReport {
+  facilityName: string | null;
+  generatedAt: string;
+  children: { childId: string; fullName: string; dateOfBirth: string; sex: string; region: string | null }[];
+  vaccinations: {
+    childId: string;
+    childName: string;
+    vaccineCode: string;
+    doseNumber: number | null;
+    administeredAt: string;
+    administeredByName: string | null;
+  }[];
+  growth: {
+    childId: string;
+    childName: string;
+    visitDate: string;
+    weightKg: number | null;
+    heightCm: number | null;
+    muacCm: number | null;
+    nutritionalStatus: string | null;
+    recordedByName: string | null;
+  }[];
+}
+
+export async function getDashboardReport(accessToken: string): Promise<DashboardReport> {
+  const res = await fetch(`${API_BASE_URL}/dashboard/report`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not load the report.');
+  }
+  return res.json();
+}
+
+export interface CalendarDay {
+  date: string;
+  items: { childId: string; fullName: string; vaccineCode: string; vaccineLabel: string; status: string }[];
+}
+
+export interface CalendarResponse {
+  month: string;
+  days: CalendarDay[];
+}
+
+export async function getCalendar(accessToken: string, month?: string): Promise<CalendarResponse> {
+  const qs = month ? `?month=${encodeURIComponent(month)}` : '';
+  const res = await fetch(`${API_BASE_URL}/dashboard/calendar${qs}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not load the calendar.');
+  }
+  return res.json();
 }
 
 export async function login(username: string, password: string): Promise<LoginResponse> {
