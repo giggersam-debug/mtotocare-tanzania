@@ -13,6 +13,12 @@ export class FacilitiesService {
     return this.facilities.find({ order: { name: 'ASC' } });
   }
 
+  /** Trimmed, unauthenticated view for the public home page — no MOH code. */
+  async listPublic() {
+    const facilities = await this.facilities.find({ order: { name: 'ASC' } });
+    return facilities.map(({ facilityId, name, level, region }) => ({ facilityId, name, level, region }));
+  }
+
   async create(dto: CreateFacilityDto) {
     const existing = await this.facilities.findOne({ where: { mohCode: dto.mohCode } });
     if (existing) throw new ConflictException('A facility with that MOH code already exists');

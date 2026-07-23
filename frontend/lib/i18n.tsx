@@ -320,6 +320,21 @@ const DICTIONARY = {
   record_recorded_by: { en: 'Recorded by', sw: 'Imerekodiwa na' },
   record_at_facility: { en: 'at', sw: 'katika' },
   record_employee_no: { en: 'Employee No.', sw: 'Namba ya Mtumishi' },
+
+  fac_level_hospital: { en: 'Hospital', sw: 'Hospitali' },
+  fac_level_health_centre: { en: 'Health Centre', sw: 'Kituo cha Afya' },
+  fac_level_dispensary: { en: 'Dispensary', sw: 'Zahanati' },
+
+  home_facilities_title: { en: 'Registered partner facilities', sw: 'Vituo vya afya vilivyosajiliwa' },
+  home_facilities_subtitle: {
+    en: 'Hospitals and health facilities already using MtotoCare to track child health records.',
+    sw: 'Hospitali na vituo vya afya vinavyotumia MtotoCare kufuatilia rekodi za afya ya mtoto.',
+  },
+  home_facilities_loading: { en: 'Loading facilities…', sw: 'Inapakia vituo…' },
+  home_facilities_empty: { en: 'No facilities registered yet.', sw: 'Hakuna vituo vilivyosajiliwa bado.' },
+
+  dp_facilities_title: { en: 'Registered facilities', sw: 'Vituo vilivyosajiliwa' },
+  dp_facilities_empty: { en: 'No facilities registered yet.', sw: 'Hakuna vituo vilivyosajiliwa bado.' },
 } as const;
 
 export type TranslationKey = keyof typeof DICTIONARY;

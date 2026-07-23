@@ -11,8 +11,10 @@ import { Roles } from '../auth/decorators/roles.decorator';
 export class FacilitiesController {
   constructor(private readonly facilitiesService: FacilitiesService) {}
 
+  // No @Roles here — any authenticated staff member can view the facility
+  // list (e.g. the health worker dashboard), not just administrators.
+  // Creating/editing facilities remains administrator/ministry only below.
   @Get()
-  @Roles('administrator', 'ministry')
   list() {
     return this.facilitiesService.list();
   }

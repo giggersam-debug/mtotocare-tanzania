@@ -466,6 +466,20 @@ export async function createFacility(payload: CreateFacilityPayload, accessToken
   return res.json();
 }
 
+export interface PublicFacility {
+  facilityId: string;
+  name: string;
+  level: 'dispensary' | 'health_centre' | 'hospital';
+  region: string;
+}
+
+// Unauthenticated — used on the public home page.
+export async function listPublicFacilities(): Promise<PublicFacility[]> {
+  const res = await fetch(`${API_BASE_URL}/facilities-public`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
 export interface StaffSummary {
   userId: string;
   username: string;

@@ -2,20 +2,30 @@
 
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { getDashboardSummary, type DashboardSummary } from '@/lib/api';
-import { useLanguage } from '@/lib/i18n';
+import { getDashboardSummary, listFacilities, type DashboardSummary, type Facility } from '@/lib/api';
+import { useLanguage, type TranslationKey } from '@/lib/i18n';
+
+const LEVEL_KEY: Record<Facility['level'], TranslationKey> = {
+  hospital: 'fac_level_hospital',
+  health_centre: 'fac_level_health_centre',
+  dispensary: 'fac_level_dispensary',
+};
 
 export function DashboardPanel({ accessToken }: { accessToken: string }) {
   const { t } = useLanguage();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [facilities, setFacilities] = useState<Facility[]>([]);
 
   useEffect(() => {
     getDashboardSummary(accessToken)
       .then(setSummary)
       .catch((err) => setError(err instanceof Error ? err.message : 'Could not load the dashboard.'))
       .finally(() => setLoading(false));
+    listFacilities(accessToken)
+      .then(setFacilities)
+      .catch(() => setFacilities([]));
   }, [accessToken]);
 
   if (loading) return <p className="text-center text-sm text-slate-400">{t('common_loading')}</p>;
@@ -78,6 +88,29 @@ export function DashboardPanel({ accessToken }: { accessToken: string }) {
                 </span>
                 <span className="text-red-600">
                   {t('dp_due_since')} {o.dueSince}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-3 text-sm font-bold text-slate-900">{t('dp_facilities_title')}</h2>
+        {facilities.length === 0 ? (
+          <p className="text-sm text-slate-400">{t('dp_facilities_empty')}</p>
+        ) : (
+          <ul className="space-y-1">
+            {facilities.map((f) => (
+              <li
+                key={f.facilityId}
+                className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm"
+              >
+                <span className="font-semibold text-slate-700">
+                  {f.name} <span className="font-normal text-slate-500">· {f.region}</span>
+                </span>
+                <span className="rounded-full bg-blue/10 px-2.5 py-1 text-xs font-semibold text-blue">
+                  {t(LEVEL_KEY[f.level])}
                 </span>
               </li>
             ))}

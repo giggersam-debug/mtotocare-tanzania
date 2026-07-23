@@ -1,10 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import { useLanguage } from '@/lib/i18n';
+import { useEffect, useState } from 'react';
+import { listPublicFacilities, type PublicFacility } from '@/lib/api';
+import { useLanguage, type TranslationKey } from '@/lib/i18n';
+
+const LEVEL_KEY: Record<PublicFacility['level'], TranslationKey> = {
+  hospital: 'fac_level_hospital',
+  health_centre: 'fac_level_health_centre',
+  dispensary: 'fac_level_dispensary',
+};
 
 export default function HomePage() {
   const { t } = useLanguage();
+  const [facilities, setFacilities] = useState<PublicFacility[] | null>(null);
+
+  useEffect(() => {
+    listPublicFacilities().then(setFacilities);
+  }, []);
 
   return (
     <main className="bg-slate-50">
@@ -65,6 +78,38 @@ export default function HomePage() {
             <p className="text-lg font-bold text-navy">{t('home_trust_title')}</p>
             <p className="mt-2 text-sm text-slate-500">{t('home_trust_body')}</p>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-4xl px-4 pb-16">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-lg font-bold text-navy">{t('home_facilities_title')}</p>
+          <p className="mt-1 text-sm text-slate-500">{t('home_facilities_subtitle')}</p>
+
+          {facilities === null && (
+            <p className="mt-4 text-sm text-slate-400">{t('home_facilities_loading')}</p>
+          )}
+          {facilities !== null && facilities.length === 0 && (
+            <p className="mt-4 text-sm text-slate-400">{t('home_facilities_empty')}</p>
+          )}
+          {facilities !== null && facilities.length > 0 && (
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {facilities.map((f) => (
+                <div
+                  key={f.facilityId}
+                  className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm"
+                >
+                  <div>
+                    <p className="font-semibold text-slate-700">{f.name}</p>
+                    <p className="text-xs text-slate-500">{f.region}</p>
+                  </div>
+                  <span className="rounded-full bg-green/10 px-2.5 py-1 text-xs font-semibold text-green">
+                    {t(LEVEL_KEY[f.level])}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </main>
