@@ -17,6 +17,7 @@ function toStaffSummary(user: User) {
     fullName: user.fullName,
     role: user.role,
     phone: user.phone ?? null,
+    employeeNumber: user.employeeNumber ?? null,
     facilityName: user.facility?.name ?? null,
     isActive: user.isActive,
     createdAt: user.createdAt,
@@ -95,6 +96,7 @@ export class AuthService {
       fullName: dto.fullName,
       role: dto.role,
       phone: dto.phone,
+      employeeNumber: dto.employeeNumber,
       facility: { facilityId: admin.facilityId } as any,
       isActive: true,
     });

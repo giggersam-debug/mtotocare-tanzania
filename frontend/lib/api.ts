@@ -174,6 +174,7 @@ export interface VaccinationRecord {
   notes?: string;
   administeredByName?: string | null;
   administeredByPhone?: string | null;
+  administeredByEmployeeNumber?: string | null;
   facilityName?: string | null;
 }
 
@@ -265,6 +266,7 @@ export interface GrowthRecord {
   notes?: string;
   recordedByName?: string | null;
   recordedByPhone?: string | null;
+  recordedByEmployeeNumber?: string | null;
   facilityName?: string | null;
 }
 
@@ -470,6 +472,7 @@ export interface StaffSummary {
   fullName: string;
   role: string;
   phone?: string | null;
+  employeeNumber?: string | null;
   facilityName?: string | null;
   isActive: boolean;
   createdAt: string;
@@ -480,6 +483,7 @@ export interface CreateStaffPayload {
   password: string;
   fullName: string;
   phone: string;
+  employeeNumber: string;
   role: 'nurse' | 'doctor' | 'nutritionist' | 'pharmacist';
 }
 

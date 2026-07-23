@@ -314,9 +314,12 @@ const DICTIONARY = {
 
   st_col_phone: { en: 'Phone', sw: 'Simu' },
   st_col_facility: { en: 'Facility', sw: 'Kituo' },
+  st_col_employee_number: { en: 'Employee No.', sw: 'Namba ya Mtumishi' },
   st_phone_placeholder: { en: 'Phone number', sw: 'Nambari ya simu' },
+  st_employee_number_placeholder: { en: 'Government employee number', sw: 'Namba ya mtumishi wa serikali' },
   record_recorded_by: { en: 'Recorded by', sw: 'Imerekodiwa na' },
   record_at_facility: { en: 'at', sw: 'katika' },
+  record_employee_no: { en: 'Employee No.', sw: 'Namba ya Mtumishi' },
 } as const;
 
 export type TranslationKey = keyof typeof DICTIONARY;

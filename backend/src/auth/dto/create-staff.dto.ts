@@ -16,6 +16,12 @@ export class CreateStaffDto {
   @IsPhoneNumber('TZ')
   phone: string;
 
+  // Official MOH/government personnel number, sourced from the national
+  // HR system — entered as-is, not generated or validated here.
+  @IsString()
+  @Length(2, 40)
+  employeeNumber: string;
+
   // Administrators create front-line staff accounts only — 'administrator'
   // and 'ministry' accounts stay seed/migration-only to avoid privilege
   // escalation through this endpoint.

@@ -62,11 +62,13 @@ export class VaccinationsService {
     const staff = userIds.length ? await this.users.find({ where: { userId: In(userIds) } }) : [];
     const nameById = new Map(staff.map((u) => [u.userId, u.fullName]));
     const phoneById = new Map(staff.map((u) => [u.userId, u.phone ?? null]));
+    const employeeNumberById = new Map(staff.map((u) => [u.userId, u.employeeNumber ?? null]));
 
     return records.map((r) => ({
       ...r,
       administeredByName: nameById.get(r.administeredBy) ?? null,
       administeredByPhone: phoneById.get(r.administeredBy) ?? null,
+      administeredByEmployeeNumber: employeeNumberById.get(r.administeredBy) ?? null,
       facilityName: r.facility?.name ?? null,
     }));
   }

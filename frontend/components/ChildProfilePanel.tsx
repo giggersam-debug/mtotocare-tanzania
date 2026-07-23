@@ -31,12 +31,14 @@ const STATUS_STYLE: Record<ScheduleEntry['status'], string> = {
 function recorderMeta(
   name: string | null | undefined,
   phone: string | null | undefined,
+  employeeNumber: string | null | undefined,
   facility: string | null | undefined,
   t: (key: TranslationKey) => string,
 ): string | null {
   if (!name) return null;
   const parts = [`${t('record_recorded_by')} ${name}`];
   if (phone) parts.push(phone);
+  if (employeeNumber) parts.push(`${t('record_employee_no')} ${employeeNumber}`);
   if (facility) parts.push(`${t('record_at_facility')} ${facility}`);
   return parts.join(' · ');
 }
@@ -254,9 +256,21 @@ function VaccinationSection({
                 <div className="flex items-center gap-3">
                   <span className="text-right text-xs text-slate-500">
                     {v.administeredAt}
-                    {recorderMeta(v.administeredByName, v.administeredByPhone, v.facilityName, t) && (
+                    {recorderMeta(
+                      v.administeredByName,
+                      v.administeredByPhone,
+                      v.administeredByEmployeeNumber,
+                      v.facilityName,
+                      t,
+                    ) && (
                       <span className="block text-slate-400">
-                        {recorderMeta(v.administeredByName, v.administeredByPhone, v.facilityName, t)}
+                        {recorderMeta(
+                          v.administeredByName,
+                          v.administeredByPhone,
+                          v.administeredByEmployeeNumber,
+                          v.facilityName,
+                          t,
+                        )}
                       </span>
                     )}
                   </span>
@@ -544,9 +558,21 @@ function GrowthSection({
                 <div className="flex items-center gap-3">
                   <span className="text-right text-xs text-slate-500">
                     {g.visitDate}
-                    {recorderMeta(g.recordedByName, g.recordedByPhone, g.facilityName, t) && (
+                    {recorderMeta(
+                      g.recordedByName,
+                      g.recordedByPhone,
+                      g.recordedByEmployeeNumber,
+                      g.facilityName,
+                      t,
+                    ) && (
                       <span className="block text-slate-400">
-                        {recorderMeta(g.recordedByName, g.recordedByPhone, g.facilityName, t)}
+                        {recorderMeta(
+                          g.recordedByName,
+                          g.recordedByPhone,
+                          g.recordedByEmployeeNumber,
+                          g.facilityName,
+                          t,
+                        )}
                       </span>
                     )}
                   </span>

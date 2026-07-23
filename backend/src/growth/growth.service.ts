@@ -78,11 +78,13 @@ export class GrowthService {
     const staff = userIds.length ? await this.users.find({ where: { userId: In(userIds) } }) : [];
     const nameById = new Map(staff.map((u) => [u.userId, u.fullName]));
     const phoneById = new Map(staff.map((u) => [u.userId, u.phone ?? null]));
+    const employeeNumberById = new Map(staff.map((u) => [u.userId, u.employeeNumber ?? null]));
 
     return records.map((r) => ({
       ...r,
       recordedByName: nameById.get(r.recordedBy) ?? null,
       recordedByPhone: phoneById.get(r.recordedBy) ?? null,
+      recordedByEmployeeNumber: employeeNumberById.get(r.recordedBy) ?? null,
       facilityName: r.facility?.name ?? null,
     }));
   }

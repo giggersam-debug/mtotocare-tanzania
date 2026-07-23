@@ -176,6 +176,7 @@ export class DashboardService {
     const staffIds = staff.map((u) => u.userId);
     const nameByStaffId = new Map(staff.map((u) => [u.userId, u.fullName]));
     const phoneByStaffId = new Map(staff.map((u) => [u.userId, u.phone ?? null]));
+    const employeeNumberByStaffId = new Map(staff.map((u) => [u.userId, u.employeeNumber ?? null]));
 
     const children = staffIds.length ? await this.children.find({ where: { createdBy: In(staffIds) } }) : [];
     const nameByChildId = new Map(children.map((c) => [c.childId, c.fullName]));
@@ -210,6 +211,7 @@ export class DashboardService {
         administeredAt: v.administeredAt,
         administeredByName: nameByStaffId.get(v.administeredBy) ?? null,
         administeredByPhone: phoneByStaffId.get(v.administeredBy) ?? null,
+        administeredByEmployeeNumber: employeeNumberByStaffId.get(v.administeredBy) ?? null,
         facilityName: facility?.name ?? null,
       })),
       growth: growthRecords.map((g) => ({
@@ -222,6 +224,7 @@ export class DashboardService {
         nutritionalStatus: g.nutritionalStatus ?? null,
         recordedByName: nameByStaffId.get(g.recordedBy) ?? null,
         recordedByPhone: phoneByStaffId.get(g.recordedBy) ?? null,
+        recordedByEmployeeNumber: employeeNumberByStaffId.get(g.recordedBy) ?? null,
         facilityName: facility?.name ?? null,
       })),
     };

@@ -37,6 +37,7 @@ function StaffSection({ accessToken }: { accessToken: string }) {
     password: '',
     fullName: '',
     phone: '',
+    employeeNumber: '',
     role: 'nurse',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -58,7 +59,7 @@ function StaffSection({ accessToken }: { accessToken: string }) {
     setFormError(null);
     try {
       await createStaff(form, accessToken);
-      setForm({ username: '', password: '', fullName: '', phone: '', role: 'nurse' });
+      setForm({ username: '', password: '', fullName: '', phone: '', employeeNumber: '', role: 'nurse' });
       setShowForm(false);
       reload();
     } catch (err) {
@@ -123,6 +124,13 @@ function StaffSection({ accessToken }: { accessToken: string }) {
             />
             <input
               className="input"
+              placeholder={t('st_employee_number_placeholder')}
+              value={form.employeeNumber}
+              onChange={(e) => setForm({ ...form, employeeNumber: e.target.value })}
+              required
+            />
+            <input
+              className="input"
               type="password"
               placeholder={t('st_temp_password')}
               value={form.password}
@@ -147,6 +155,7 @@ function StaffSection({ accessToken }: { accessToken: string }) {
               <th className="py-2">{t('st_col_name')}</th>
               <th className="py-2">{t('st_username')}</th>
               <th className="py-2">{t('st_col_phone')}</th>
+              <th className="py-2">{t('st_col_employee_number')}</th>
               <th className="py-2">{t('st_col_role')}</th>
               <th className="py-2">{t('st_col_facility')}</th>
               <th className="py-2">{t('st_col_status')}</th>
@@ -159,6 +168,7 @@ function StaffSection({ accessToken }: { accessToken: string }) {
                 <td className="py-2 font-semibold text-slate-700">{member.fullName}</td>
                 <td className="py-2 text-slate-500">{member.username}</td>
                 <td className="py-2 text-slate-500">{member.phone ?? '—'}</td>
+                <td className="py-2 text-slate-500">{member.employeeNumber ?? '—'}</td>
                 <td className="py-2 text-slate-500">{member.role}</td>
                 <td className="py-2 text-slate-500">{member.facilityName ?? '—'}</td>
                 <td className="py-2">
