@@ -16,6 +16,8 @@ function toStaffSummary(user: User) {
     username: user.username,
     fullName: user.fullName,
     role: user.role,
+    phone: user.phone ?? null,
+    facilityName: user.facility?.name ?? null,
     isActive: user.isActive,
     createdAt: user.createdAt,
   };
@@ -69,6 +71,7 @@ export class AuthService {
 
     const staff = await this.users.find({
       where: { facility: { facilityId: admin.facilityId } },
+      relations: ['facility'],
       order: { fullName: 'ASC' },
     });
 
@@ -91,12 +94,14 @@ export class AuthService {
       passwordHash,
       fullName: dto.fullName,
       role: dto.role,
+      phone: dto.phone,
       facility: { facilityId: admin.facilityId } as any,
       isActive: true,
     });
 
     const saved = await this.users.save(staff);
-    return toStaffSummary(saved);
+    const withFacility = await this.users.findOne({ where: { userId: saved.userId }, relations: ['facility'] });
+    return toStaffSummary(withFacility ?? saved);
   }
 
   /** Settings page: activate/deactivate a staff account at the admin's facility. */

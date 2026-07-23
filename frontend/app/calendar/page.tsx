@@ -26,7 +26,7 @@ export default function CalendarPage() {
       <div className="mx-auto mb-8 max-w-lg text-center">
         <p className="text-xs font-semibold uppercase tracking-widest text-blue">Facility overview</p>
         <h1 className="mt-2 text-2xl font-bold text-slate-900">{t('calendar_title')}</h1>
-        <p className="mt-1 text-sm text-slate-500">Upcoming and overdue vaccine visits, by day.</p>
+        <p className="mt-1 text-sm text-slate-500">{t('calendar_subtitle')}</p>
       </div>
       <CalendarPanel accessToken={accessToken} />
     </main>

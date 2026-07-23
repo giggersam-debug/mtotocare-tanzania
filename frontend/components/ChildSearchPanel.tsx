@@ -3,8 +3,10 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { searchChildren, type ChildSearchResult } from '@/lib/api';
+import { useLanguage } from '@/lib/i18n';
 
 export function ChildSearchPanel({ accessToken }: { accessToken: string }) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<ChildSearchResult[]>([]);
   const [searched, setSearched] = useState(false);
@@ -32,12 +34,12 @@ export function ChildSearchPanel({ accessToken }: { accessToken: string }) {
       <form onSubmit={handleSearch} className="flex gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <input
           className="input"
-          placeholder="Search by name or health ID…"
+          placeholder={t('cs_search_placeholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <button type="submit" disabled={loading || !query.trim()} className="btn-primary w-auto px-6">
-          {loading ? 'Searching…' : 'Search'}
+          {loading ? t('cs_searching') : t('cs_search')}
         </button>
       </form>
 
@@ -46,14 +48,14 @@ export function ChildSearchPanel({ accessToken }: { accessToken: string }) {
       {searched && !error && (
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           {results.length === 0 ? (
-            <p className="p-6 text-center text-sm text-slate-400">No children matched that search.</p>
+            <p className="p-6 text-center text-sm text-slate-400">{t('cs_no_match')}</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
-                  <th className="px-4 py-3">Child</th>
-                  <th className="px-4 py-3">ID</th>
-                  <th className="px-4 py-3">DOB</th>
+                  <th className="px-4 py-3">{t('cs_col_child')}</th>
+                  <th className="px-4 py-3">{t('cs_col_id')}</th>
+                  <th className="px-4 py-3">{t('cs_col_dob')}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -70,7 +72,7 @@ export function ChildSearchPanel({ accessToken }: { accessToken: string }) {
                         href={`/children/${child.childId}`}
                         className="rounded-lg bg-green px-3 py-1.5 text-xs font-semibold text-white hover:bg-green/90"
                       >
-                        Open Record
+                        {t('hw_open_record')}
                       </Link>
                     </td>
                   </tr>

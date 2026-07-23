@@ -20,6 +20,11 @@ export class ParentService {
       this.childrenService.scheduleForChild(child.childId),
     ]);
 
+    // Staff phone numbers are for facility/admin eyes only — strip them
+    // before this reaches the public, unauthenticated Parent Portal.
+    const publicVaccinations = vaccinations.map(({ administeredByPhone, ...rest }: any) => rest);
+    const publicGrowth = growth.map(({ recordedByPhone, ...rest }: any) => rest);
+
     return {
       child: {
         childId: child.childId,
@@ -28,8 +33,8 @@ export class ParentService {
         sex: child.sex,
         whatsappOptIn: child.guardian?.whatsappOptIn ?? false,
       },
-      vaccinations,
-      growth,
+      vaccinations: publicVaccinations,
+      growth: publicGrowth,
       schedule,
     };
   }

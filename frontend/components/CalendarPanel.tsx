@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getCalendar, type CalendarDay } from '@/lib/api';
+import { useLanguage } from '@/lib/i18n';
 
 function currentMonth(): string {
   return new Date().toISOString().slice(0, 7);
@@ -24,6 +25,7 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 export function CalendarPanel({ accessToken }: { accessToken: string }) {
+  const { t } = useLanguage();
   const [month, setMonth] = useState(currentMonth());
   const [days, setDays] = useState<CalendarDay[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -46,18 +48,18 @@ export function CalendarPanel({ accessToken }: { accessToken: string }) {
           onClick={() => setMonth((m) => shiftMonth(m, -1))}
           className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
         >
-          ← Prev
+          {t('cal_prev')}
         </button>
         <p className="text-sm font-bold text-slate-900">{formatMonthLabel(month)}</p>
         <button
           onClick={() => setMonth((m) => shiftMonth(m, 1))}
           className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
         >
-          Next →
+          {t('cal_next')}
         </button>
       </div>
 
-      {loading && <p className="text-center text-sm text-slate-400">Loading…</p>}
+      {loading && <p className="text-center text-sm text-slate-400">{t('common_loading')}</p>}
       {error && <p className="text-center text-sm font-medium text-red-600">{error}</p>}
 
       {!loading && !error && (
@@ -68,7 +70,7 @@ export function CalendarPanel({ accessToken }: { accessToken: string }) {
 
           {days.length === 0 ? (
             <p className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-400 shadow-sm">
-              No due or overdue visits found for this month.
+              {t('cal_no_visits')}
             </p>
           ) : (
             <div className="space-y-3">

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { getPatientList, runRemindersNow, type PatientListEntry } from '@/lib/api';
+import { useLanguage } from '@/lib/i18n';
 
 function ageLabel(dateOfBirth: string): string {
   const dob = new Date(dateOfBirth).getTime();
@@ -19,12 +20,18 @@ const FLAG_STYLE: Record<string, string> = {
 };
 
 export function HealthWorkerPanel({ accessToken }: { accessToken: string }) {
+  const { t } = useLanguage();
   const [patients, setPatients] = useState<PatientListEntry[]>([]);
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [reminderStatus, setReminderStatus] = useState<string | null>(null);
+
+  const FLAG_LABEL: Record<string, string> = {
+    'Overdue visit': t('hw_flag_overdue'),
+    'Malnutrition risk': t('hw_flag_malnutrition'),
+  };
 
   useEffect(() => {
     getPatientList(accessToken)
@@ -63,12 +70,12 @@ export function HealthWorkerPanel({ accessToken }: { accessToken: string }) {
       <div className="flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <input
           className="input flex-1"
-          placeholder="Filter by name or health ID…"
+          placeholder={t('hw_filter_placeholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <Link href="/scan" className="btn-primary w-auto whitespace-nowrap px-6">
-          Scan QR
+          {t('hw_scan_qr')}
         </Link>
         <button
           type="button"
@@ -76,28 +83,28 @@ export function HealthWorkerPanel({ accessToken }: { accessToken: string }) {
           disabled={sending}
           className="btn-secondary w-auto whitespace-nowrap px-6 disabled:opacity-50"
         >
-          {sending ? 'Sending…' : 'Send Vaccine Reminders (SMS/WhatsApp)'}
+          {sending ? t('hw_sending') : t('hw_send_reminders')}
         </button>
       </div>
 
       {reminderStatus && <p className="text-center text-sm font-medium text-slate-600">{reminderStatus}</p>}
 
-      {loading && <p className="text-center text-sm text-slate-400">Loading…</p>}
+      {loading && <p className="text-center text-sm text-slate-400">{t('common_loading')}</p>}
       {error && <p className="text-center text-sm font-medium text-red-600">{error}</p>}
 
       {!loading && !error && (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           {filtered.length === 0 ? (
-            <p className="p-6 text-center text-sm text-slate-400">No patients found.</p>
+            <p className="p-6 text-center text-sm text-slate-400">{t('hw_no_patients')}</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
-                  <th className="px-4 py-3">Child</th>
-                  <th className="px-4 py-3">ID</th>
-                  <th className="px-4 py-3">Age</th>
-                  <th className="px-4 py-3">Last Visit</th>
-                  <th className="px-4 py-3">Flags</th>
+                  <th className="px-4 py-3">{t('hw_col_child')}</th>
+                  <th className="px-4 py-3">{t('hw_col_id')}</th>
+                  <th className="px-4 py-3">{t('hw_col_age')}</th>
+                  <th className="px-4 py-3">{t('hw_col_last_visit')}</th>
+                  <th className="px-4 py-3">{t('hw_col_flags')}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -120,7 +127,7 @@ export function HealthWorkerPanel({ accessToken }: { accessToken: string }) {
                               key={f}
                               className={`rounded-full px-2 py-0.5 text-xs font-semibold ${FLAG_STYLE[f] ?? 'bg-slate-100 text-slate-500'}`}
                             >
-                              {f}
+                              {FLAG_LABEL[f] ?? f}
                             </span>
                           ))
                         )}
@@ -131,7 +138,7 @@ export function HealthWorkerPanel({ accessToken }: { accessToken: string }) {
                         href={`/children/${p.childId}`}
                         className="rounded-lg bg-green px-3 py-1.5 text-xs font-semibold text-white hover:bg-green/90"
                       >
-                        Open Record
+                        {t('hw_open_record')}
                       </Link>
                     </td>
                   </tr>

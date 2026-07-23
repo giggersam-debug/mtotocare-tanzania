@@ -50,6 +50,7 @@ export class GrowthService {
   async historyForChild(childId: string) {
     const records = await this.growthRecords.find({
       where: { child: { childId } },
+      relations: ['facility'],
       order: { visitDate: 'ASC' },
     });
     return this.withRecorderNames(records);
@@ -71,12 +72,18 @@ export class GrowthService {
     return this.growthRecords.save(record);
   }
 
-  /** Attaches the recording staff member's name to each row for display. */
+  /** Attaches the recording staff member's name/phone and facility name to each row for display. */
   private async withRecorderNames(records: GrowthRecord[]) {
     const userIds = [...new Set(records.map((r) => r.recordedBy))];
     const staff = userIds.length ? await this.users.find({ where: { userId: In(userIds) } }) : [];
     const nameById = new Map(staff.map((u) => [u.userId, u.fullName]));
+    const phoneById = new Map(staff.map((u) => [u.userId, u.phone ?? null]));
 
-    return records.map((r) => ({ ...r, recordedByName: nameById.get(r.recordedBy) ?? null }));
+    return records.map((r) => ({
+      ...r,
+      recordedByName: nameById.get(r.recordedBy) ?? null,
+      recordedByPhone: phoneById.get(r.recordedBy) ?? null,
+      facilityName: r.facility?.name ?? null,
+    }));
   }
 }

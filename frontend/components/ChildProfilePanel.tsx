@@ -17,14 +17,9 @@ import {
   type ScheduleEntry,
   type VaccinationRecord,
 } from '@/lib/api';
+import { useLanguage, type TranslationKey } from '@/lib/i18n';
 
 const today = () => new Date().toISOString().slice(0, 10);
-
-const NUTRITIONAL_STATUS_LABEL: Record<string, string> = {
-  normal: 'Normal',
-  moderate_acute_malnutrition: 'Moderate acute malnutrition',
-  severe_acute_malnutrition: 'Severe acute malnutrition',
-};
 
 const STATUS_STYLE: Record<ScheduleEntry['status'], string> = {
   completed: 'bg-green/10 text-green',
@@ -33,14 +28,32 @@ const STATUS_STYLE: Record<ScheduleEntry['status'], string> = {
   not_yet_due: 'bg-slate-100 text-slate-500',
 };
 
-const STATUS_LABEL: Record<ScheduleEntry['status'], string> = {
-  completed: 'Completed',
-  due: 'Due',
-  overdue: 'Overdue',
-  not_yet_due: 'Not yet due',
-};
+function recorderMeta(
+  name: string | null | undefined,
+  phone: string | null | undefined,
+  facility: string | null | undefined,
+  t: (key: TranslationKey) => string,
+): string | null {
+  if (!name) return null;
+  const parts = [`${t('record_recorded_by')} ${name}`];
+  if (phone) parts.push(phone);
+  if (facility) parts.push(`${t('record_at_facility')} ${facility}`);
+  return parts.join(' · ');
+}
 
 export function ChildProfilePanel({ childId, accessToken }: { childId: string; accessToken: string }) {
+  const { t } = useLanguage();
+  const NUTRITIONAL_STATUS_LABEL: Record<string, string> = {
+    normal: t('nutr_normal'),
+    moderate_acute_malnutrition: t('nutr_moderate'),
+    severe_acute_malnutrition: t('nutr_severe'),
+  };
+  const STATUS_LABEL: Record<ScheduleEntry['status'], string> = {
+    completed: t('pp_status_completed'),
+    due: t('pp_status_due'),
+    overdue: t('pp_status_overdue'),
+    not_yet_due: t('pp_status_not_yet_due'),
+  };
   const [profile, setProfile] = useState<ChildProfile | null>(null);
   const [vaccinations, setVaccinations] = useState<VaccinationRecord[]>([]);
   const [growth, setGrowth] = useState<GrowthRecord[]>([]);
@@ -68,7 +81,7 @@ export function ChildProfilePanel({ childId, accessToken }: { childId: string; a
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [childId, accessToken]);
 
-  if (loading) return <p className="text-center text-sm text-slate-400">Loading…</p>;
+  if (loading) return <p className="text-center text-sm text-slate-400">{t('common_loading')}</p>;
   if (error) return <p className="mx-auto max-w-lg text-center text-sm font-medium text-red-600">{error}</p>;
   if (!profile) return null;
 
@@ -87,12 +100,13 @@ export function ChildProfilePanel({ childId, accessToken }: { childId: string; a
             </p>
             <h2 className="text-xl font-bold text-slate-900">{profile.fullName}</h2>
             <p className="text-sm text-slate-500">
-              {profile.sex === 'female' ? 'Female' : 'Male'} · Born {profile.dateOfBirth}
+              {profile.sex === 'female' ? t('reg_female') : t('reg_male')} · Born {profile.dateOfBirth}
               {profile.region ? ` · ${profile.region}${profile.district ? `, ${profile.district}` : ''}` : ''}
             </p>
             {profile.guardian && (
               <p className="mt-1 text-xs text-slate-400">
-                Guardian: {profile.guardian.fullName} ({profile.guardian.relation}) · {profile.guardian.phone}
+                {t('reg_guardian')}: {profile.guardian.fullName} ({profile.guardian.relation}) ·{' '}
+                {profile.guardian.phone}
               </p>
             )}
           </div>
@@ -102,28 +116,27 @@ export function ChildProfilePanel({ childId, accessToken }: { childId: string; a
                 latestGrowth.nutritionalStatus === 'normal' ? 'bg-green/10 text-green' : 'bg-red-50 text-red-600'
               }`}
             >
-              Nutrition: {NUTRITIONAL_STATUS_LABEL[latestGrowth.nutritionalStatus]}
+              {t('cp_nutrition_label')}: {NUTRITIONAL_STATUS_LABEL[latestGrowth.nutritionalStatus]}
             </span>
           )}
         </div>
 
         {latestGrowth && (
           <div className="mt-5 grid grid-cols-3 gap-4">
-            <MeasureCard label="Weight" value={latestGrowth.weightKg ? `${latestGrowth.weightKg} kg` : '—'} />
-            <MeasureCard label="Height" value={latestGrowth.heightCm ? `${latestGrowth.heightCm} cm` : '—'} />
-            <MeasureCard label="MUAC" value={latestGrowth.muacCm ? `${latestGrowth.muacCm} cm` : '—'} />
+            <MeasureCard label={t('cp_weight')} value={latestGrowth.weightKg ? `${latestGrowth.weightKg} kg` : '—'} />
+            <MeasureCard label={t('cp_height')} value={latestGrowth.heightCm ? `${latestGrowth.heightCm} cm` : '—'} />
+            <MeasureCard label={t('cp_muac')} value={latestGrowth.muacCm ? `${latestGrowth.muacCm} cm` : '—'} />
           </div>
         )}
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-sm font-bold text-slate-900">Growth chart — weight over time</h3>
+        <h3 className="mb-4 text-sm font-bold text-slate-900">{t('cp_growth_chart_title')}</h3>
         {chartData.length === 0 ? (
-          <p className="text-sm text-slate-400">No weight measurements recorded yet.</p>
+          <p className="text-sm text-slate-400">{t('cp_no_weight_measurements')}</p>
         ) : chartData.length === 1 ? (
           <p className="text-sm text-slate-400">
-            One measurement so far ({chartData[0].weight} kg on {chartData[0].date}) — record another visit to see a
-            trend line.
+            {t('pp_one_measurement')} ({chartData[0].weight} kg on {chartData[0].date}) — {t('cp_trend_line_hint')}
           </p>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
@@ -138,13 +151,13 @@ export function ChildProfilePanel({ childId, accessToken }: { childId: string; a
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-sm font-bold text-slate-900">Vaccination tracker</h3>
+        <h3 className="mb-4 text-sm font-bold text-slate-900">{t('cp_vaccination_tracker')}</h3>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
-              <th className="py-2">Vaccine</th>
-              <th className="py-2">Scheduled</th>
-              <th className="py-2">Status</th>
+              <th className="py-2">{t('field_vaccine')}</th>
+              <th className="py-2">{t('cp_col_scheduled')}</th>
+              <th className="py-2">{t('cp_col_status')}</th>
             </tr>
           </thead>
           <tbody>
@@ -186,18 +199,19 @@ function VaccinationSection({
   vaccinations: VaccinationRecord[];
   onChanged: () => Promise<void>;
 }) {
+  const { t } = useLanguage();
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-slate-900">Vaccination history</h3>
+        <h3 className="text-sm font-bold text-slate-900">{t('vp_vaccination_history')}</h3>
         <button
           onClick={() => setShowAdd((v) => !v)}
           className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
         >
-          {showAdd ? 'Cancel' : '+ Record vaccination'}
+          {showAdd ? t('common_cancel') : t('cp_record_vaccination_btn')}
         </button>
       </div>
 
@@ -213,7 +227,7 @@ function VaccinationSection({
       )}
 
       {vaccinations.length === 0 ? (
-        <p className="text-sm text-slate-400">No vaccinations recorded yet.</p>
+        <p className="text-sm text-slate-400">{t('vp_no_vaccinations')}</p>
       ) : (
         <ul className="mt-4 space-y-2">
           {vaccinations.map((v) =>
@@ -240,13 +254,17 @@ function VaccinationSection({
                 <div className="flex items-center gap-3">
                   <span className="text-right text-xs text-slate-500">
                     {v.administeredAt}
-                    {v.administeredByName && <span className="block text-slate-400">by {v.administeredByName}</span>}
+                    {recorderMeta(v.administeredByName, v.administeredByPhone, v.facilityName, t) && (
+                      <span className="block text-slate-400">
+                        {recorderMeta(v.administeredByName, v.administeredByPhone, v.facilityName, t)}
+                      </span>
+                    )}
                   </span>
                   <button
                     onClick={() => setEditingId(v.vaccinationId)}
                     className="text-xs font-semibold text-blue underline underline-offset-2"
                   >
-                    Edit
+                    {t('common_edit')}
                   </button>
                 </div>
               </li>
@@ -267,6 +285,7 @@ function AddVaccinationForm({
   accessToken: string;
   onDone: () => Promise<void>;
 }) {
+  const { t } = useLanguage();
   const [vaccineCode, setVaccineCode] = useState<(typeof VACCINE_CODES)[number]>('BCG');
   const [doseNumber, setDoseNumber] = useState('');
   const [administeredAt, setAdministeredAt] = useState(today());
@@ -302,7 +321,7 @@ function AddVaccinationForm({
   return (
     <form onSubmit={handleSubmit} className="mb-4 space-y-3 rounded-xl bg-slate-50 p-4">
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Vaccine">
+        <Field label={t('field_vaccine')}>
           <select
             className="input"
             value={vaccineCode}
@@ -315,7 +334,7 @@ function AddVaccinationForm({
             ))}
           </select>
         </Field>
-        <Field label="Dose number">
+        <Field label={t('field_dose_number')}>
           <input
             className="input"
             type="number"
@@ -327,7 +346,7 @@ function AddVaccinationForm({
         </Field>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Date administered">
+        <Field label={t('field_date_administered')}>
           <input
             className="input"
             type="date"
@@ -335,16 +354,16 @@ function AddVaccinationForm({
             onChange={(e) => setAdministeredAt(e.target.value)}
           />
         </Field>
-        <Field label="Batch number">
+        <Field label={t('field_batch_number')}>
           <input className="input" value={batchNumber} onChange={(e) => setBatchNumber(e.target.value)} />
         </Field>
       </div>
-      <Field label="Notes">
+      <Field label={t('field_notes')}>
         <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </Field>
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
       <button type="submit" disabled={submitting} className="btn-primary">
-        {submitting ? 'Saving…' : 'Save vaccination'}
+        {submitting ? t('common_saving') : t('cp_save_vaccination')}
       </button>
     </form>
   );
@@ -361,6 +380,7 @@ function EditVaccinationForm({
   onDone: () => Promise<void>;
   onCancel: () => void;
 }) {
+  const { t } = useLanguage();
   const [vaccineCode, setVaccineCode] = useState<(typeof VACCINE_CODES)[number]>(
     record.vaccineCode as (typeof VACCINE_CODES)[number],
   );
@@ -399,7 +419,7 @@ function EditVaccinationForm({
     <li className="space-y-3 rounded-xl border border-blue/30 bg-blue/5 p-4">
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Vaccine">
+          <Field label={t('field_vaccine')}>
             <select
               className="input"
               value={vaccineCode}
@@ -412,7 +432,7 @@ function EditVaccinationForm({
               ))}
             </select>
           </Field>
-          <Field label="Dose number">
+          <Field label={t('field_dose_number')}>
             <input
               className="input"
               type="number"
@@ -424,7 +444,7 @@ function EditVaccinationForm({
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Date administered">
+          <Field label={t('field_date_administered')}>
             <input
               className="input"
               type="date"
@@ -432,20 +452,20 @@ function EditVaccinationForm({
               onChange={(e) => setAdministeredAt(e.target.value)}
             />
           </Field>
-          <Field label="Batch number">
+          <Field label={t('field_batch_number')}>
             <input className="input" value={batchNumber} onChange={(e) => setBatchNumber(e.target.value)} />
           </Field>
         </div>
-        <Field label="Notes">
+        <Field label={t('field_notes')}>
           <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} />
         </Field>
         {error && <p className="text-sm font-medium text-red-600">{error}</p>}
         <div className="flex gap-3">
           <button type="button" onClick={onCancel} className="btn-secondary">
-            Cancel
+            {t('common_cancel')}
           </button>
           <button type="submit" disabled={submitting} className="btn-primary">
-            {submitting ? 'Saving…' : 'Save changes'}
+            {submitting ? t('common_saving') : t('common_save_changes')}
           </button>
         </div>
       </form>
@@ -464,18 +484,19 @@ function GrowthSection({
   growth: GrowthRecord[];
   onChanged: () => Promise<void>;
 }) {
+  const { t } = useLanguage();
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-slate-900">Growth history</h3>
+        <h3 className="text-sm font-bold text-slate-900">{t('vp_growth_history')}</h3>
         <button
           onClick={() => setShowAdd((v) => !v)}
           className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
         >
-          {showAdd ? 'Cancel' : '+ Record growth measurement'}
+          {showAdd ? t('common_cancel') : t('cp_record_growth_btn')}
         </button>
       </div>
 
@@ -491,7 +512,7 @@ function GrowthSection({
       )}
 
       {growth.length === 0 ? (
-        <p className="text-sm text-slate-400">No measurements recorded yet.</p>
+        <p className="text-sm text-slate-400">{t('vp_no_measurements')}</p>
       ) : (
         <ul className="mt-4 space-y-2">
           {growth.map((g) =>
@@ -523,13 +544,17 @@ function GrowthSection({
                 <div className="flex items-center gap-3">
                   <span className="text-right text-xs text-slate-500">
                     {g.visitDate}
-                    {g.recordedByName && <span className="block text-slate-400">by {g.recordedByName}</span>}
+                    {recorderMeta(g.recordedByName, g.recordedByPhone, g.facilityName, t) && (
+                      <span className="block text-slate-400">
+                        {recorderMeta(g.recordedByName, g.recordedByPhone, g.facilityName, t)}
+                      </span>
+                    )}
                   </span>
                   <button
                     onClick={() => setEditingId(g.growthRecordId)}
                     className="text-xs font-semibold text-blue underline underline-offset-2"
                   >
-                    Edit
+                    {t('common_edit')}
                   </button>
                 </div>
               </li>
@@ -550,6 +575,7 @@ function AddGrowthForm({
   accessToken: string;
   onDone: () => Promise<void>;
 }) {
+  const { t } = useLanguage();
   const [visitDate, setVisitDate] = useState(today());
   const [weightKg, setWeightKg] = useState('');
   const [heightCm, setHeightCm] = useState('');
@@ -584,26 +610,26 @@ function AddGrowthForm({
 
   return (
     <form onSubmit={handleSubmit} className="mb-4 space-y-3 rounded-xl bg-slate-50 p-4">
-      <Field label="Visit date">
+      <Field label={t('field_visit_date')}>
         <input className="input" type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} />
       </Field>
       <div className="grid grid-cols-3 gap-3">
-        <Field label="Weight (kg)">
+        <Field label={t('field_weight_kg')}>
           <input className="input" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
         </Field>
-        <Field label="Height (cm)">
+        <Field label={t('field_height_cm')}>
           <input className="input" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
         </Field>
-        <Field label="MUAC (cm)">
+        <Field label={t('field_muac_cm')}>
           <input className="input" value={muacCm} onChange={(e) => setMuacCm(e.target.value)} />
         </Field>
       </div>
-      <Field label="Notes">
+      <Field label={t('field_notes')}>
         <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </Field>
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
       <button type="submit" disabled={submitting} className="btn-primary">
-        {submitting ? 'Saving…' : 'Save measurement'}
+        {submitting ? t('common_saving') : t('vp_save_measurement')}
       </button>
     </form>
   );
@@ -620,6 +646,7 @@ function EditGrowthForm({
   onDone: () => Promise<void>;
   onCancel: () => void;
 }) {
+  const { t } = useLanguage();
   const [visitDate, setVisitDate] = useState(record.visitDate);
   const [weightKg, setWeightKg] = useState(record.weightKg?.toString() ?? '');
   const [heightCm, setHeightCm] = useState(record.heightCm?.toString() ?? '');
@@ -655,30 +682,30 @@ function EditGrowthForm({
   return (
     <li className="space-y-3 rounded-xl border border-blue/30 bg-blue/5 p-4">
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Field label="Visit date">
+        <Field label={t('field_visit_date')}>
           <input className="input" type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} />
         </Field>
         <div className="grid grid-cols-3 gap-3">
-          <Field label="Weight (kg)">
+          <Field label={t('field_weight_kg')}>
             <input className="input" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
           </Field>
-          <Field label="Height (cm)">
+          <Field label={t('field_height_cm')}>
             <input className="input" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
           </Field>
-          <Field label="MUAC (cm)">
+          <Field label={t('field_muac_cm')}>
             <input className="input" value={muacCm} onChange={(e) => setMuacCm(e.target.value)} />
           </Field>
         </div>
-        <Field label="Notes">
+        <Field label={t('field_notes')}>
           <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} />
         </Field>
         {error && <p className="text-sm font-medium text-red-600">{error}</p>}
         <div className="flex gap-3">
           <button type="button" onClick={onCancel} className="btn-secondary">
-            Cancel
+            {t('common_cancel')}
           </button>
           <button type="submit" disabled={submitting} className="btn-primary">
-            {submitting ? 'Saving…' : 'Save changes'}
+            {submitting ? t('common_saving') : t('common_save_changes')}
           </button>
         </div>
       </form>

@@ -1,4 +1,4 @@
-import { IsIn, IsString, Length } from 'class-validator';
+import { IsIn, IsPhoneNumber, IsString, Length } from 'class-validator';
 
 export class CreateStaffDto {
   @IsString()
@@ -12,6 +12,9 @@ export class CreateStaffDto {
   @IsString()
   @Length(2, 150)
   fullName: string;
+
+  @IsPhoneNumber('TZ')
+  phone: string;
 
   // Administrators create front-line staff accounts only — 'administrator'
   // and 'ministry' accounts stay seed/migration-only to avoid privilege

@@ -34,7 +34,7 @@ export default function SettingsPage() {
       <div className="mx-auto mb-8 max-w-lg text-center">
         <p className="text-xs font-semibold uppercase tracking-widest text-blue">Administration</p>
         <h1 className="mt-2 text-2xl font-bold text-slate-900">{t('settings_title')}</h1>
-        <p className="mt-1 text-sm text-slate-500">Manage staff accounts and facilities for your facility.</p>
+        <p className="mt-1 text-sm text-slate-500">{t('settings_subtitle')}</p>
       </div>
       <SettingsPanel accessToken={accessToken} />
     </main>

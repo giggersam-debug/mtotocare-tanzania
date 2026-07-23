@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { getDashboardSummary, type DashboardSummary } from '@/lib/api';
+import { useLanguage } from '@/lib/i18n';
 
 export function DashboardPanel({ accessToken }: { accessToken: string }) {
+  const { t } = useLanguage();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -16,7 +18,7 @@ export function DashboardPanel({ accessToken }: { accessToken: string }) {
       .finally(() => setLoading(false));
   }, [accessToken]);
 
-  if (loading) return <p className="text-center text-sm text-slate-400">Loading…</p>;
+  if (loading) return <p className="text-center text-sm text-slate-400">{t('common_loading')}</p>;
 
   if (error) {
     return <p className="mx-auto max-w-lg text-center text-sm font-medium text-red-600">{error}</p>;
@@ -31,19 +33,19 @@ export function DashboardPanel({ accessToken }: { accessToken: string }) {
       )}
 
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Children registered" value={summary.childrenRegistered} />
-        <StatCard label="Vaccinations given" value={summary.vaccinationsGiven} />
+        <StatCard label={t('dp_children_registered')} value={summary.childrenRegistered} />
+        <StatCard label={t('dp_vaccinations_given')} value={summary.vaccinationsGiven} />
         <StatCard
-          label="Malnutrition risk"
+          label={t('dp_malnutrition_risk')}
           value={summary.malnutritionRiskCount}
           tone={summary.malnutritionRiskCount > 0 ? 'warning' : 'default'}
         />
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-3 text-sm font-bold text-slate-900">Vaccinations by type</h2>
+        <h2 className="mb-3 text-sm font-bold text-slate-900">{t('dp_vaccinations_by_type')}</h2>
         {summary.vaccinationsByVaccine.length === 0 ? (
-          <p className="text-sm text-slate-400">No vaccinations recorded yet.</p>
+          <p className="text-sm text-slate-400">{t('dp_no_vaccinations')}</p>
         ) : (
           <ResponsiveContainer width="100%" height={Math.max(220, summary.vaccinationsByVaccine.length * 28)}>
             <BarChart
@@ -61,9 +63,9 @@ export function DashboardPanel({ accessToken }: { accessToken: string }) {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-3 text-sm font-bold text-slate-900">Overdue vaccinations</h2>
+        <h2 className="mb-3 text-sm font-bold text-slate-900">{t('dp_overdue_vaccinations')}</h2>
         {summary.overdueVaccinations.length === 0 ? (
-          <p className="text-sm text-slate-400">Nothing overdue right now.</p>
+          <p className="text-sm text-slate-400">{t('dp_nothing_overdue')}</p>
         ) : (
           <ul className="space-y-1">
             {summary.overdueVaccinations.map((o, i) => (
@@ -74,7 +76,9 @@ export function DashboardPanel({ accessToken }: { accessToken: string }) {
                 <span className="font-semibold text-slate-700">
                   {o.fullName} <span className="font-normal text-slate-500">· {o.vaccineCode}</span>
                 </span>
-                <span className="text-red-600">due since {o.dueSince}</span>
+                <span className="text-red-600">
+                  {t('dp_due_since')} {o.dueSince}
+                </span>
               </li>
             ))}
           </ul>

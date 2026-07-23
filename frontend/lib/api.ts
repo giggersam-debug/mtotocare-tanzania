@@ -173,6 +173,8 @@ export interface VaccinationRecord {
   batchNumber?: string;
   notes?: string;
   administeredByName?: string | null;
+  administeredByPhone?: string | null;
+  facilityName?: string | null;
 }
 
 export async function recordVaccination(
@@ -262,6 +264,8 @@ export interface GrowthRecord {
   nutritionalStatus?: NutritionalStatus;
   notes?: string;
   recordedByName?: string | null;
+  recordedByPhone?: string | null;
+  facilityName?: string | null;
 }
 
 export async function recordGrowth(payload: RecordGrowthPayload, accessToken: string): Promise<GrowthRecord> {
@@ -465,6 +469,8 @@ export interface StaffSummary {
   username: string;
   fullName: string;
   role: string;
+  phone?: string | null;
+  facilityName?: string | null;
   isActive: boolean;
   createdAt: string;
 }
@@ -473,6 +479,7 @@ export interface CreateStaffPayload {
   username: string;
   password: string;
   fullName: string;
+  phone: string;
   role: 'nurse' | 'doctor' | 'nutritionist' | 'pharmacist';
 }
 

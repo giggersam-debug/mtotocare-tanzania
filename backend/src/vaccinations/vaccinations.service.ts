@@ -37,6 +37,7 @@ export class VaccinationsService {
   async historyForChild(childId: string) {
     const records = await this.vaccinations.find({
       where: { child: { childId } },
+      relations: ['facility'],
       order: { administeredAt: 'ASC' },
     });
     return this.withRecorderNames(records);
@@ -55,12 +56,18 @@ export class VaccinationsService {
     return this.vaccinations.save(record);
   }
 
-  /** Attaches the recording staff member's name to each row for display. */
+  /** Attaches the recording staff member's name/phone and facility name to each row for display. */
   private async withRecorderNames(records: Vaccination[]) {
     const userIds = [...new Set(records.map((r) => r.administeredBy))];
     const staff = userIds.length ? await this.users.find({ where: { userId: In(userIds) } }) : [];
     const nameById = new Map(staff.map((u) => [u.userId, u.fullName]));
+    const phoneById = new Map(staff.map((u) => [u.userId, u.phone ?? null]));
 
-    return records.map((r) => ({ ...r, administeredByName: nameById.get(r.administeredBy) ?? null }));
+    return records.map((r) => ({
+      ...r,
+      administeredByName: nameById.get(r.administeredBy) ?? null,
+      administeredByPhone: phoneById.get(r.administeredBy) ?? null,
+      facilityName: r.facility?.name ?? null,
+    }));
   }
 }

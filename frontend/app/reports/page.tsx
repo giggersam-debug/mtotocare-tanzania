@@ -26,7 +26,7 @@ export default function ReportsPage() {
       <div className="mx-auto mb-8 max-w-lg text-center">
         <p className="text-xs font-semibold uppercase tracking-widest text-blue">Facility overview</p>
         <h1 className="mt-2 text-2xl font-bold text-slate-900">{t('reports_title')}</h1>
-        <p className="mt-1 text-sm text-slate-500">Export your facility's records as CSV for reporting.</p>
+        <p className="mt-1 text-sm text-slate-500">{t('reports_subtitle')}</p>
       </div>
       <ReportsPanel accessToken={accessToken} />
     </main>

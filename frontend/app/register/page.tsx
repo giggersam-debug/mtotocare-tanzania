@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RegisterChildForm } from '@/components/RegisterChildForm';
+import { useLanguage } from '@/lib/i18n';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,9 +26,9 @@ export default function RegisterPage() {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-12">
       <div className="mx-auto mb-8 max-w-lg text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-blue">New registration</p>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900">Register a child</h1>
-        <p className="mt-1 text-sm text-slate-500">Issues a Child ID and QR passport immediately.</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-blue">{t('register_eyebrow')}</p>
+        <h1 className="mt-2 text-2xl font-bold text-slate-900">{t('register_title')}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t('register_subtitle')}</p>
       </div>
       <RegisterChildForm accessToken={accessToken} />
     </main>

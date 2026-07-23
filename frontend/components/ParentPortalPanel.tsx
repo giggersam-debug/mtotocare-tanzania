@@ -3,19 +3,13 @@
 import { useState, type FormEvent } from 'react';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { parentLookup, type ParentLookupResponse, type ScheduleEntry } from '@/lib/api';
+import { useLanguage } from '@/lib/i18n';
 
 const STATUS_STYLE: Record<ScheduleEntry['status'], string> = {
   completed: 'bg-green/10 text-green',
   due: 'bg-amber-100 text-amber-700',
   overdue: 'bg-red-100 text-red-600',
   not_yet_due: 'bg-slate-100 text-slate-500',
-};
-
-const STATUS_LABEL: Record<ScheduleEntry['status'], string> = {
-  completed: 'Completed',
-  due: 'Due',
-  overdue: 'Overdue',
-  not_yet_due: 'Not yet due',
 };
 
 function downloadHealthCertificate(result: ParentLookupResponse) {
@@ -66,6 +60,13 @@ function downloadHealthCertificate(result: ParentLookupResponse) {
 }
 
 export function ParentPortalPanel() {
+  const { t } = useLanguage();
+  const STATUS_LABEL: Record<ScheduleEntry['status'], string> = {
+    completed: t('pp_status_completed'),
+    due: t('pp_status_due'),
+    overdue: t('pp_status_overdue'),
+    not_yet_due: t('pp_status_not_yet_due'),
+  };
   const [qrToken, setQrToken] = useState('');
   const [phone, setPhone] = useState('');
   const [result, setResult] = useState<ParentLookupResponse | null>(null);
@@ -94,24 +95,24 @@ export function ParentPortalPanel() {
   return (
     <div className="mx-auto w-full max-w-lg space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-900">Find your child's record</h2>
-        <p className="text-xs text-slate-500">
-          Enter the QR token from your child's passport card and the phone number used at registration.
-        </p>
+        <h2 className="text-lg font-bold text-slate-900">{t('pp_find_title')}</h2>
+        <p className="text-xs text-slate-500">{t('pp_find_desc')}</p>
 
         <label className="block">
-          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">QR token</span>
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {t('pp_qr_token')}
+          </span>
           <input
             className="input font-mono text-xs"
             value={qrToken}
             onChange={(e) => setQrToken(e.target.value)}
-            placeholder="Paste or scan the token from the passport card"
+            placeholder={t('pp_qr_placeholder')}
           />
         </label>
 
         <label className="block">
           <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Phone number
+            {t('pp_phone')}
           </span>
           <input
             className="input"
@@ -124,13 +125,13 @@ export function ParentPortalPanel() {
         {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
         <button type="submit" disabled={loading || !qrToken.trim() || !phone.trim()} className="btn-primary">
-          {loading ? 'Looking up…' : 'View my child’s record'}
+          {loading ? t('pp_looking_up') : t('pp_view_record')}
         </button>
       </form>
 
       {result && (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-[10px] uppercase tracking-wide text-slate-400">Welcome back</p>
+          <p className="text-[10px] uppercase tracking-wide text-slate-400">{t('pp_welcome_back')}</p>
           <h2 className="text-lg font-bold text-slate-900">{result.child.fullName}</h2>
           <p className="text-sm text-slate-500">
             {result.child.sex === 'female' ? 'Female' : 'Male'} · Born {result.child.dateOfBirth}
@@ -141,23 +142,21 @@ export function ParentPortalPanel() {
               onClick={() => downloadHealthCertificate(result)}
               className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
             >
-              Download Health Certificate
+              {t('pp_download_cert')}
             </button>
             <span
               className={`rounded-lg px-3 py-2 text-xs font-semibold ${
                 result.child.whatsappOptIn ? 'bg-green/10 text-green' : 'bg-slate-100 text-slate-500'
               }`}
             >
-              WhatsApp reminders {result.child.whatsappOptIn ? 'on' : 'off'}
+              {result.child.whatsappOptIn ? t('pp_whatsapp_on') : t('pp_whatsapp_off')}
             </span>
           </div>
 
           <div className="mt-5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Upcoming appointments
-            </p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('pp_upcoming')}</p>
             {upcoming.length === 0 ? (
-              <p className="text-sm text-slate-400">Nothing due right now — fully up to date.</p>
+              <p className="text-sm text-slate-400">{t('pp_up_to_date')}</p>
             ) : (
               <ul className="space-y-1">
                 {upcoming.map((s) => (
@@ -179,10 +178,12 @@ export function ParentPortalPanel() {
 
           {chartData.length > 0 && (
             <div className="mt-5">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Growth chart</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {t('pp_growth_chart')}
+              </p>
               {chartData.length === 1 ? (
                 <p className="text-sm text-slate-400">
-                  One measurement so far ({chartData[0].weight} kg on {chartData[0].date}).
+                  {t('pp_one_measurement')} ({chartData[0].weight} kg on {chartData[0].date}).
                 </p>
               ) : (
                 <ResponsiveContainer width="100%" height={180}>
@@ -199,10 +200,10 @@ export function ParentPortalPanel() {
 
           <div className="mt-5">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Vaccination history
+              {t('pp_vaccination_history')}
             </p>
             {result.vaccinations.length === 0 ? (
-              <p className="text-sm text-slate-400">No vaccinations recorded yet.</p>
+              <p className="text-sm text-slate-400">{t('pp_no_vaccinations')}</p>
             ) : (
               <ul className="space-y-1">
                 {result.vaccinations.map((v) => (

@@ -12,16 +12,30 @@ import {
   type GrowthRecord,
   type VaccinationRecord,
 } from '@/lib/api';
+import { useLanguage } from '@/lib/i18n';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-const NUTRITIONAL_STATUS_LABEL: Record<string, string> = {
-  normal: 'Normal',
-  moderate_acute_malnutrition: 'Moderate acute malnutrition',
-  severe_acute_malnutrition: 'Severe acute malnutrition',
-};
+function recorderMeta(
+  name: string | null | undefined,
+  phone: string | null | undefined,
+  facility: string | null | undefined,
+  t: (key: any) => string,
+): string | null {
+  if (!name) return null;
+  const parts = [`${t('record_recorded_by')} ${name}`];
+  if (phone) parts.push(phone);
+  if (facility) parts.push(`${t('record_at_facility')} ${facility}`);
+  return parts.join(' · ');
+}
 
 export function VaccinationPanel({ accessToken }: { accessToken: string }) {
+  const { t } = useLanguage();
+  const NUTRITIONAL_STATUS_LABEL: Record<string, string> = {
+    normal: t('nutr_normal'),
+    moderate_acute_malnutrition: t('nutr_moderate'),
+    severe_acute_malnutrition: t('nutr_severe'),
+  };
   const [qrToken, setQrToken] = useState('');
   const [child, setChild] = useState<ChildSummary | null>(null);
   const [history, setHistory] = useState<VaccinationRecord[]>([]);
@@ -140,18 +154,18 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
         onSubmit={handleLookup}
         className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
       >
-        <h2 className="text-lg font-bold text-slate-900">Scan child passport</h2>
-        <Field label="QR token">
+        <h2 className="text-lg font-bold text-slate-900">{t('vp_scan_title')}</h2>
+        <Field label={t('pp_qr_token')}>
           <input
             className="input font-mono text-xs"
-            placeholder="Paste or scan the token from the child's QR passport"
+            placeholder={t('vp_qr_placeholder')}
             value={qrToken}
             onChange={(e) => setQrToken(e.target.value)}
           />
         </Field>
         {lookupError && <p className="text-sm font-medium text-red-600">{lookupError}</p>}
         <button type="submit" disabled={looking || !qrToken.trim()} className="btn-primary">
-          {looking ? 'Looking up…' : 'Find child'}
+          {looking ? t('vp_looking_up') : t('vp_find_child')}
         </button>
       </form>
 
@@ -159,10 +173,10 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] uppercase tracking-wide text-slate-400">Child</p>
+              <p className="text-[10px] uppercase tracking-wide text-slate-400">{t('vp_child_label')}</p>
               <p className="text-lg font-bold text-slate-900">{child.fullName}</p>
               <p className="text-sm text-slate-500">
-                DOB {child.dateOfBirth} · {child.sex === 'female' ? 'Female' : 'Male'}
+                DOB {child.dateOfBirth} · {child.sex === 'female' ? t('reg_female') : t('reg_male')}
               </p>
             </div>
             {latestGrowth?.nutritionalStatus && latestGrowth.nutritionalStatus !== 'normal' && (
@@ -174,10 +188,10 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
 
           <div className="mt-5">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Vaccination history
+              {t('vp_vaccination_history')}
             </p>
             {history.length === 0 ? (
-              <p className="text-sm text-slate-400">No vaccinations recorded yet.</p>
+              <p className="text-sm text-slate-400">{t('vp_no_vaccinations')}</p>
             ) : (
               <ul className="space-y-1">
                 {history.map((v) => (
@@ -191,7 +205,11 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
                     </span>
                     <span className="text-right text-xs text-slate-500">
                       {v.administeredAt}
-                      {v.administeredByName && <span className="block text-slate-400">by {v.administeredByName}</span>}
+                      {recorderMeta(v.administeredByName, v.administeredByPhone, v.facilityName, t) && (
+                        <span className="block text-slate-400">
+                          {recorderMeta(v.administeredByName, v.administeredByPhone, v.facilityName, t)}
+                        </span>
+                      )}
                     </span>
                   </li>
                 ))}
@@ -201,11 +219,11 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
 
           <form onSubmit={handleRecord} className="mt-6 space-y-4 border-t border-slate-100 pt-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Record a new vaccination
+              {t('vp_record_new_vaccination')}
             </p>
 
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Vaccine">
+              <Field label={t('field_vaccine')}>
                 <select
                   className="input"
                   value={vaccineCode}
@@ -218,7 +236,7 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
                   ))}
                 </select>
               </Field>
-              <Field label="Dose number">
+              <Field label={t('field_dose_number')}>
                 <input
                   className="input"
                   type="number"
@@ -231,7 +249,7 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Date administered">
+              <Field label={t('field_date_administered')}>
                 <input
                   className="input"
                   type="date"
@@ -239,29 +257,29 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
                   onChange={(e) => setAdministeredAt(e.target.value)}
                 />
               </Field>
-              <Field label="Batch number">
+              <Field label={t('field_batch_number')}>
                 <input className="input" value={batchNumber} onChange={(e) => setBatchNumber(e.target.value)} />
               </Field>
             </div>
 
-            <Field label="Notes">
+            <Field label={t('field_notes')}>
               <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} />
             </Field>
 
             {recordError && <p className="text-sm font-medium text-red-600">{recordError}</p>}
-            {justRecorded && <p className="text-sm font-medium text-green">Vaccination recorded.</p>}
+            {justRecorded && <p className="text-sm font-medium text-green">{t('vp_vaccination_recorded')}</p>}
 
             <button type="submit" disabled={recording} className="btn-primary">
-              {recording ? 'Recording…' : 'Record vaccination'}
+              {recording ? t('vp_recording') : t('vp_record_vaccination')}
             </button>
           </form>
 
           <div className="mt-6 border-t border-slate-100 pt-5">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Growth history
+              {t('vp_growth_history')}
             </p>
             {growthHistory.length === 0 ? (
-              <p className="text-sm text-slate-400">No measurements recorded yet.</p>
+              <p className="text-sm text-slate-400">{t('vp_no_measurements')}</p>
             ) : (
               <ul className="space-y-1">
                 {growthHistory.map((g) => (
@@ -280,7 +298,11 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
                     </span>
                     <span className="text-right text-xs text-slate-500">
                       {g.visitDate}
-                      {g.recordedByName && <span className="block text-slate-400">by {g.recordedByName}</span>}
+                      {recorderMeta(g.recordedByName, g.recordedByPhone, g.facilityName, t) && (
+                        <span className="block text-slate-400">
+                          {recorderMeta(g.recordedByName, g.recordedByPhone, g.facilityName, t)}
+                        </span>
+                      )}
                     </span>
                   </li>
                 ))}
@@ -290,34 +312,34 @@ export function VaccinationPanel({ accessToken }: { accessToken: string }) {
 
           <form onSubmit={handleRecordGrowth} className="mt-6 space-y-4 border-t border-slate-100 pt-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Record growth measurement
+              {t('vp_record_growth_measurement')}
             </p>
 
-            <Field label="Visit date">
+            <Field label={t('field_visit_date')}>
               <input className="input" type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} />
             </Field>
 
             <div className="grid grid-cols-3 gap-4">
-              <Field label="Weight (kg)">
+              <Field label={t('field_weight_kg')}>
                 <input className="input" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
               </Field>
-              <Field label="Height (cm)">
+              <Field label={t('field_height_cm')}>
                 <input className="input" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
               </Field>
-              <Field label="MUAC (cm)">
+              <Field label={t('field_muac_cm')}>
                 <input className="input" value={muacCm} onChange={(e) => setMuacCm(e.target.value)} />
               </Field>
             </div>
 
-            <Field label="Notes">
+            <Field label={t('field_notes')}>
               <input className="input" value={growthNotes} onChange={(e) => setGrowthNotes(e.target.value)} />
             </Field>
 
             {growthError && <p className="text-sm font-medium text-red-600">{growthError}</p>}
-            {justSavedGrowth && <p className="text-sm font-medium text-green">Measurement recorded.</p>}
+            {justSavedGrowth && <p className="text-sm font-medium text-green">{t('vp_measurement_recorded')}</p>}
 
             <button type="submit" disabled={savingGrowth} className="btn-primary">
-              {savingGrowth ? 'Saving…' : 'Save measurement'}
+              {savingGrowth ? t('common_saving') : t('vp_save_measurement')}
             </button>
           </form>
         </div>

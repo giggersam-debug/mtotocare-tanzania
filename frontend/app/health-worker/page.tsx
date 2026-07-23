@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { HealthWorkerPanel } from '@/components/HealthWorkerPanel';
+import { useLanguage } from '@/lib/i18n';
 
 export default function HealthWorkerPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,9 +24,9 @@ export default function HealthWorkerPage() {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-12">
       <div className="mx-auto mb-8 max-w-lg text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-blue">Health Worker Portal</p>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900">Your facility's patients</h1>
-        <p className="mt-1 text-sm text-slate-500">Flagged for overdue visits or nutrition risk, most recent first.</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-blue">{t('hw_eyebrow')}</p>
+        <h1 className="mt-2 text-2xl font-bold text-slate-900">{t('hw_title')}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t('hw_subtitle')}</p>
       </div>
       <HealthWorkerPanel accessToken={accessToken} />
     </main>

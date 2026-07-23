@@ -12,6 +12,7 @@ import {
   type Facility,
   type StaffSummary,
 } from '@/lib/api';
+import { useLanguage } from '@/lib/i18n';
 
 const STAFF_ROLES: CreateStaffPayload['role'][] = ['nurse', 'doctor', 'nutritionist', 'pharmacist'];
 const FACILITY_LEVELS: Facility['level'][] = ['dispensary', 'health_centre', 'hospital'];
@@ -26,6 +27,7 @@ export function SettingsPanel({ accessToken }: { accessToken: string }) {
 }
 
 function StaffSection({ accessToken }: { accessToken: string }) {
+  const { t } = useLanguage();
   const [staff, setStaff] = useState<StaffSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +36,7 @@ function StaffSection({ accessToken }: { accessToken: string }) {
     username: '',
     password: '',
     fullName: '',
+    phone: '',
     role: 'nurse',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -55,7 +58,7 @@ function StaffSection({ accessToken }: { accessToken: string }) {
     setFormError(null);
     try {
       await createStaff(form, accessToken);
-      setForm({ username: '', password: '', fullName: '', role: 'nurse' });
+      setForm({ username: '', password: '', fullName: '', phone: '', role: 'nurse' });
       setShowForm(false);
       reload();
     } catch (err) {
@@ -77,9 +80,9 @@ function StaffSection({ accessToken }: { accessToken: string }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-slate-900">Staff accounts</h2>
+        <h2 className="text-sm font-bold text-slate-900">{t('st_staff_accounts')}</h2>
         <button onClick={() => setShowForm((v) => !v)} className="btn-secondary w-auto px-4 py-1.5 text-xs">
-          {showForm ? 'Cancel' : 'Add staff account'}
+          {showForm ? t('st_cancel') : t('st_add_staff')}
         </button>
       </div>
 
@@ -88,7 +91,7 @@ function StaffSection({ accessToken }: { accessToken: string }) {
           <div className="grid grid-cols-2 gap-3">
             <input
               className="input"
-              placeholder="Full name"
+              placeholder={t('st_full_name')}
               value={form.fullName}
               onChange={(e) => setForm({ ...form, fullName: e.target.value })}
               required
@@ -106,15 +109,22 @@ function StaffSection({ accessToken }: { accessToken: string }) {
             </select>
             <input
               className="input"
-              placeholder="Username"
+              placeholder={t('st_username')}
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
               required
             />
             <input
               className="input"
+              placeholder={t('st_phone_placeholder')}
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              required
+            />
+            <input
+              className="input"
               type="password"
-              placeholder="Temporary password (min 8 chars)"
+              placeholder={t('st_temp_password')}
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               required
@@ -122,22 +132,24 @@ function StaffSection({ accessToken }: { accessToken: string }) {
           </div>
           {formError && <p className="text-sm font-medium text-red-600">{formError}</p>}
           <button type="submit" disabled={submitting} className="btn-primary">
-            {submitting ? 'Creating…' : 'Create account'}
+            {submitting ? t('st_creating') : t('st_create_account')}
           </button>
         </form>
       )}
 
-      {loading && <p className="text-center text-sm text-slate-400">Loading…</p>}
+      {loading && <p className="text-center text-sm text-slate-400">{t('common_loading')}</p>}
       {error && <p className="text-center text-sm font-medium text-red-600">{error}</p>}
 
       {!loading && !error && (
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
-              <th className="py-2">Name</th>
-              <th className="py-2">Username</th>
-              <th className="py-2">Role</th>
-              <th className="py-2">Status</th>
+              <th className="py-2">{t('st_col_name')}</th>
+              <th className="py-2">{t('st_username')}</th>
+              <th className="py-2">{t('st_col_phone')}</th>
+              <th className="py-2">{t('st_col_role')}</th>
+              <th className="py-2">{t('st_col_facility')}</th>
+              <th className="py-2">{t('st_col_status')}</th>
               <th className="py-2" />
             </tr>
           </thead>
@@ -146,14 +158,16 @@ function StaffSection({ accessToken }: { accessToken: string }) {
               <tr key={member.userId} className="border-b border-slate-50 last:border-0">
                 <td className="py-2 font-semibold text-slate-700">{member.fullName}</td>
                 <td className="py-2 text-slate-500">{member.username}</td>
+                <td className="py-2 text-slate-500">{member.phone ?? '—'}</td>
                 <td className="py-2 text-slate-500">{member.role}</td>
+                <td className="py-2 text-slate-500">{member.facilityName ?? '—'}</td>
                 <td className="py-2">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                       member.isActive ? 'bg-green/10 text-green' : 'bg-slate-100 text-slate-400'
                     }`}
                   >
-                    {member.isActive ? 'Active' : 'Deactivated'}
+                    {member.isActive ? t('st_active') : t('st_deactivated')}
                   </span>
                 </td>
                 <td className="py-2 text-right">
@@ -161,7 +175,7 @@ function StaffSection({ accessToken }: { accessToken: string }) {
                     onClick={() => handleToggleActive(member)}
                     className="text-xs font-semibold text-blue hover:underline"
                   >
-                    {member.isActive ? 'Deactivate' : 'Reactivate'}
+                    {member.isActive ? t('st_deactivate') : t('st_reactivate')}
                   </button>
                 </td>
               </tr>
@@ -174,6 +188,7 @@ function StaffSection({ accessToken }: { accessToken: string }) {
 }
 
 function FacilitiesSection({ accessToken }: { accessToken: string }) {
+  const { t } = useLanguage();
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -216,9 +231,9 @@ function FacilitiesSection({ accessToken }: { accessToken: string }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-slate-900">Facilities</h2>
+        <h2 className="text-sm font-bold text-slate-900">{t('st_facilities')}</h2>
         <button onClick={() => setShowForm((v) => !v)} className="btn-secondary w-auto px-4 py-1.5 text-xs">
-          {showForm ? 'Cancel' : 'Add facility'}
+          {showForm ? t('st_cancel') : t('st_add_facility')}
         </button>
       </div>
 
@@ -227,7 +242,7 @@ function FacilitiesSection({ accessToken }: { accessToken: string }) {
           <div className="grid grid-cols-2 gap-3">
             <input
               className="input"
-              placeholder="Facility name"
+              placeholder={t('st_facility_name')}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
@@ -245,14 +260,14 @@ function FacilitiesSection({ accessToken }: { accessToken: string }) {
             </select>
             <input
               className="input"
-              placeholder="Region"
+              placeholder={t('st_region')}
               value={form.region}
               onChange={(e) => setForm({ ...form, region: e.target.value })}
               required
             />
             <input
               className="input"
-              placeholder="MOH code"
+              placeholder={t('st_moh_code')}
               value={form.mohCode}
               onChange={(e) => setForm({ ...form, mohCode: e.target.value })}
               required
@@ -260,22 +275,22 @@ function FacilitiesSection({ accessToken }: { accessToken: string }) {
           </div>
           {formError && <p className="text-sm font-medium text-red-600">{formError}</p>}
           <button type="submit" disabled={submitting} className="btn-primary">
-            {submitting ? 'Creating…' : 'Create facility'}
+            {submitting ? t('st_creating') : t('st_create_facility')}
           </button>
         </form>
       )}
 
-      {loading && <p className="text-center text-sm text-slate-400">Loading…</p>}
+      {loading && <p className="text-center text-sm text-slate-400">{t('common_loading')}</p>}
       {error && <p className="text-center text-sm font-medium text-red-600">{error}</p>}
 
       {!loading && !error && (
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
-              <th className="py-2">Name</th>
-              <th className="py-2">Level</th>
-              <th className="py-2">Region</th>
-              <th className="py-2">MOH code</th>
+              <th className="py-2">{t('st_col_name')}</th>
+              <th className="py-2">{t('st_col_level')}</th>
+              <th className="py-2">{t('st_region')}</th>
+              <th className="py-2">{t('st_moh_code')}</th>
             </tr>
           </thead>
           <tbody>

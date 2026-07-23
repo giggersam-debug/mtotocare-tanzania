@@ -20,6 +20,9 @@ export class User {
   @Column({ length: 30 })
   role: UserRole;
 
+  @Column({ length: 20, nullable: true })
+  phone?: string;
+
   @ManyToOne(() => Facility, { nullable: true })
   @JoinColumn({ name: 'facility_id' })
   facility?: Facility;
