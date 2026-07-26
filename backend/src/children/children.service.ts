@@ -71,6 +71,7 @@ export class ChildrenService {
         ward: dto.ward,
         village: dto.village,
         birthRegistrationNumber: dto.birthRegistrationNumber,
+        birthFacility: dto.birthFacilityId ? ({ facilityId: dto.birthFacilityId } as any) : undefined,
         guardian,
         secondGuardian,
         qrToken,
@@ -152,7 +153,10 @@ export class ChildrenService {
 
   /** Full bio for the Child Profile page. */
   async getById(childId: string) {
-    const child = await this.children.findOne({ where: { childId }, relations: ['guardian', 'secondGuardian'] });
+    const child = await this.children.findOne({
+      where: { childId },
+      relations: ['guardian', 'secondGuardian', 'birthFacility'],
+    });
     if (!child) throw new NotFoundException('No child found for that ID');
 
     return {
@@ -166,6 +170,9 @@ export class ChildrenService {
       district: child.district,
       ward: child.ward,
       village: child.village,
+      birthFacility: child.birthFacility
+        ? { facilityId: child.birthFacility.facilityId, name: child.birthFacility.name, region: child.birthFacility.region }
+        : undefined,
       guardian: child.guardian
         ? {
             fullName: child.guardian.fullName,

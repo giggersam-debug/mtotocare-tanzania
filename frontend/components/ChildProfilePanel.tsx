@@ -126,6 +126,11 @@ export function ChildProfilePanel({ childId, accessToken }: { childId: string; a
               {profile.sex === 'female' ? t('reg_female') : t('reg_male')} · Born {profile.dateOfBirth}
               {profile.region ? ` · ${profile.region}${profile.district ? `, ${profile.district}` : ''}` : ''}
             </p>
+            {profile.birthFacility && (
+              <p className="mt-0.5 text-xs text-slate-400">
+                {t('reg_birth_facility')}: {profile.birthFacility.name} ({profile.birthFacility.region})
+              </p>
+            )}
             {profile.guardian && (
               <p className="mt-1 text-xs text-slate-400">
                 {t('reg_guardian')}: {profile.guardian.fullName} ({profile.guardian.relation}) ·{' '}

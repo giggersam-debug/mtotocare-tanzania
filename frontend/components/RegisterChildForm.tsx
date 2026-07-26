@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
+  listFacilities,
   recordMaternalHealth,
   registerChild,
   type ArtAdherence,
   type DeliveryMode,
+  type Facility,
   type HivStatus,
   type RegisterChildResponse,
 } from '@/lib/api';
@@ -22,6 +24,7 @@ const initialState = {
   dateOfBirth: '',
   sex: 'female' as 'male' | 'female',
   birthWeightKg: '',
+  birthFacilityId: '',
   region: '',
   district: '',
   guardianFullName: '',
@@ -58,6 +61,13 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RegisterChildResponse | null>(null);
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+
+  useEffect(() => {
+    listFacilities(accessToken)
+      .then((list) => setFacilities([...list].sort((a, b) => a.region.localeCompare(b.region) || a.name.localeCompare(b.name))))
+      .catch(() => setFacilities([]));
+  }, [accessToken]);
 
   function update<K extends keyof typeof initialState>(key: K, value: (typeof initialState)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -73,6 +83,7 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
           dateOfBirth: form.dateOfBirth,
           sex: form.sex,
           birthWeightKg: form.birthWeightKg ? Number(form.birthWeightKg) : undefined,
+          birthFacilityId: form.birthFacilityId || undefined,
           region: form.region,
           district: form.district,
           guardian: {
@@ -467,6 +478,21 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
 
           <Field label={t('reg_birth_weight')}>
             <input className="input" value={form.birthWeightKg} onChange={(e) => update('birthWeightKg', e.target.value)} />
+          </Field>
+
+          <Field label={t('reg_birth_facility')}>
+            <select
+              className="input"
+              value={form.birthFacilityId}
+              onChange={(e) => update('birthFacilityId', e.target.value)}
+            >
+              <option value="">{t('reg_birth_facility_placeholder')}</option>
+              {facilities.map((f) => (
+                <option key={f.facilityId} value={f.facilityId}>
+                  {f.name} — {f.region}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <div className="grid grid-cols-2 gap-4">

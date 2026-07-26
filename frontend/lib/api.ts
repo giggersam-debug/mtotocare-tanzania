@@ -5,6 +5,7 @@ export interface RegisterChildPayload {
   dateOfBirth: string;
   sex: 'male' | 'female';
   birthWeightKg?: number;
+  birthFacilityId?: string;
   region?: string;
   district?: string;
   ward?: string;
@@ -103,6 +104,7 @@ export interface ChildProfile {
   district?: string;
   ward?: string;
   village?: string;
+  birthFacility?: { facilityId: string; name: string; region: string };
   guardian?: { fullName: string; relation: string; phone: string };
   secondGuardian?: { fullName: string; relation: string; phone: string };
 }
