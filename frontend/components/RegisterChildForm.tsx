@@ -1,11 +1,18 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { registerChild, type RegisterChildResponse } from '@/lib/api';
+import {
+  recordMaternalHealth,
+  registerChild,
+  type ArtAdherence,
+  type DeliveryMode,
+  type HivStatus,
+  type RegisterChildResponse,
+} from '@/lib/api';
 import { PassportCard } from './PassportCard';
 import { useLanguage } from '@/lib/i18n';
 
-type Step = 'child' | 'guardian' | 'success';
+type Step = 'child' | 'guardian' | 'maternal' | 'success';
 
 const initialState = {
   fullName: '',
@@ -18,6 +25,22 @@ const initialState = {
   guardianRelation: 'mother' as 'mother' | 'father' | 'guardian',
   guardianPhone: '',
   whatsappOptIn: true,
+  gravida: '',
+  para: '',
+  estimatedDueDate: '',
+  ancVisits: '',
+  gestationalAgeWeeks: '',
+  gestationalDiabetes: false,
+  hypertension: false,
+  anemia: false,
+  malariaInPregnancy: false,
+  hivStatus: 'unknown' as HivStatus,
+  artAdherence: '' as ArtAdherence | '',
+  deliveryMode: '' as DeliveryMode | '',
+  apgarScore: '',
+  deliveryComplications: '',
+  geneticFamilyHistory: '',
+  maternalConsent: false,
 };
 
 export function RegisterChildForm({ accessToken }: { accessToken: string }) {
@@ -32,7 +55,7 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(withMaternal: boolean) {
     setSubmitting(true);
     setError(null);
     try {
@@ -53,6 +76,38 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
         },
         accessToken,
       );
+
+      if (withMaternal) {
+        try {
+          await recordMaternalHealth(
+            {
+              childId: response.child.childId,
+              gravida: form.gravida ? Number(form.gravida) : undefined,
+              para: form.para ? Number(form.para) : undefined,
+              estimatedDueDate: form.estimatedDueDate || undefined,
+              ancVisits: form.ancVisits ? Number(form.ancVisits) : undefined,
+              gestationalAgeWeeks: form.gestationalAgeWeeks ? Number(form.gestationalAgeWeeks) : undefined,
+              gestationalDiabetes: form.gestationalDiabetes,
+              hypertension: form.hypertension,
+              anemia: form.anemia,
+              malariaInPregnancy: form.malariaInPregnancy,
+              hivStatus: form.hivStatus,
+              artAdherence: form.artAdherence || undefined,
+              deliveryMode: form.deliveryMode || undefined,
+              apgarScore: form.apgarScore ? Number(form.apgarScore) : undefined,
+              deliveryComplications: form.deliveryComplications || undefined,
+              geneticFamilyHistory: form.geneticFamilyHistory || undefined,
+              consentGiven: form.maternalConsent,
+            },
+            accessToken,
+          );
+        } catch (mErr) {
+          // Child registration already succeeded and the passport is issued —
+          // don't block that on a maternal-history save failure.
+          console.error('Could not save the maternal health record:', mErr);
+        }
+      }
+
       setResult(response);
       setStep('success');
     } catch (err) {
@@ -91,7 +146,12 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
     <div className="mx-auto w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-6 flex gap-2">
         <div className={`h-1 flex-1 rounded-full ${step === 'child' ? 'bg-blue' : 'bg-green'}`} />
-        <div className={`h-1 flex-1 rounded-full ${step === 'guardian' ? 'bg-blue' : 'bg-slate-200'}`} />
+        <div
+          className={`h-1 flex-1 rounded-full ${
+            step === 'guardian' ? 'bg-blue' : step === 'maternal' ? 'bg-green' : 'bg-slate-200'
+          }`}
+        />
+        <div className={`h-1 flex-1 rounded-full ${step === 'maternal' ? 'bg-blue' : 'bg-slate-200'}`} />
       </div>
 
       {step === 'child' && (
@@ -181,18 +241,176 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
             {t('reg_whatsapp_optin')}
           </label>
 
-          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
-
           <div className="flex gap-3">
             <button onClick={() => setStep('child')} className="btn-secondary">
               {t('reg_back')}
             </button>
             <button
-              onClick={handleSubmit}
-              disabled={submitting || !form.guardianFullName || !form.guardianPhone}
+              onClick={() => setStep('maternal')}
+              disabled={!form.guardianFullName || !form.guardianPhone}
               className="btn-primary"
             >
-              {submitting ? t('reg_issuing') : t('reg_submit')}
+              {t('reg_continue_guardian')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 'maternal' && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold text-slate-900">{t('reg_maternal_title')}</h2>
+          <p className="text-sm text-slate-500">{t('reg_maternal_subtitle')}</p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label={t('reg_gravida')}>
+              <input className="input" value={form.gravida} onChange={(e) => update('gravida', e.target.value)} />
+            </Field>
+            <Field label={t('reg_para')}>
+              <input className="input" value={form.para} onChange={(e) => update('para', e.target.value)} />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label={t('reg_edd')}>
+              <input
+                type="date"
+                className="input"
+                value={form.estimatedDueDate}
+                onChange={(e) => update('estimatedDueDate', e.target.value)}
+              />
+            </Field>
+            <Field label={t('reg_anc_visits')}>
+              <input className="input" value={form.ancVisits} onChange={(e) => update('ancVisits', e.target.value)} />
+            </Field>
+          </div>
+
+          <Field label={t('reg_gestational_age')}>
+            <input
+              className="input"
+              value={form.gestationalAgeWeeks}
+              onChange={(e) => update('gestationalAgeWeeks', e.target.value)}
+            />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-2">
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={form.gestationalDiabetes}
+                onChange={(e) => update('gestationalDiabetes', e.target.checked)}
+              />
+              {t('reg_gestational_diabetes')}
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={form.hypertension}
+                onChange={(e) => update('hypertension', e.target.checked)}
+              />
+              {t('reg_hypertension')}
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input type="checkbox" checked={form.anemia} onChange={(e) => update('anemia', e.target.checked)} />
+              {t('reg_anemia')}
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={form.malariaInPregnancy}
+                onChange={(e) => update('malariaInPregnancy', e.target.checked)}
+              />
+              {t('reg_malaria')}
+            </label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label={t('reg_hiv_status')}>
+              <select
+                className="input"
+                value={form.hivStatus}
+                onChange={(e) => update('hivStatus', e.target.value as HivStatus)}
+              >
+                <option value="unknown">{t('reg_hiv_unknown')}</option>
+                <option value="negative">{t('reg_hiv_negative')}</option>
+                <option value="positive">{t('reg_hiv_positive')}</option>
+              </select>
+            </Field>
+            <Field label={t('reg_art_adherence')}>
+              <select
+                className="input"
+                value={form.artAdherence}
+                onChange={(e) => update('artAdherence', e.target.value as ArtAdherence | '')}
+              >
+                <option value="">—</option>
+                <option value="good">{t('reg_art_good')}</option>
+                <option value="fair">{t('reg_art_fair')}</option>
+                <option value="poor">{t('reg_art_poor')}</option>
+                <option value="n/a">{t('reg_art_na')}</option>
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label={t('reg_delivery_mode')}>
+              <select
+                className="input"
+                value={form.deliveryMode}
+                onChange={(e) => update('deliveryMode', e.target.value as DeliveryMode | '')}
+              >
+                <option value="">—</option>
+                <option value="vaginal">{t('reg_delivery_vaginal')}</option>
+                <option value="cesarean">{t('reg_delivery_cesarean')}</option>
+                <option value="assisted">{t('reg_delivery_assisted')}</option>
+              </select>
+            </Field>
+            <Field label={t('reg_apgar_score')}>
+              <input className="input" value={form.apgarScore} onChange={(e) => update('apgarScore', e.target.value)} />
+            </Field>
+          </div>
+
+          <Field label={t('reg_delivery_complications')}>
+            <textarea
+              className="input"
+              rows={2}
+              value={form.deliveryComplications}
+              onChange={(e) => update('deliveryComplications', e.target.value)}
+            />
+          </Field>
+
+          <Field label={t('reg_genetic_family_history')}>
+            <textarea
+              className="input"
+              rows={2}
+              value={form.geneticFamilyHistory}
+              onChange={(e) => update('geneticFamilyHistory', e.target.value)}
+            />
+          </Field>
+
+          <label className="flex items-start gap-2 text-sm text-slate-600">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={form.maternalConsent}
+              onChange={(e) => update('maternalConsent', e.target.checked)}
+            />
+            {t('reg_maternal_consent')}
+          </label>
+
+          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+
+          <div className="flex gap-3">
+            <button onClick={() => setStep('guardian')} className="btn-secondary">
+              {t('reg_back')}
+            </button>
+            <button onClick={() => handleSubmit(false)} disabled={submitting} className="btn-secondary">
+              {t('reg_skip_maternal')}
+            </button>
+            <button
+              onClick={() => handleSubmit(true)}
+              disabled={submitting || !form.maternalConsent}
+              className="btn-primary"
+            >
+              {submitting ? t('reg_issuing') : t('reg_save_maternal')}
             </button>
           </div>
         </div>

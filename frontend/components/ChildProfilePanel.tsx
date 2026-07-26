@@ -6,6 +6,7 @@ import {
   getChildProfile,
   getChildSchedule,
   getGrowthHistory,
+  getMaternalHealth,
   getVaccinationHistory,
   recordGrowth,
   recordVaccination,
@@ -14,6 +15,7 @@ import {
   VACCINE_CODES,
   type ChildProfile,
   type GrowthRecord,
+  type MaternalHealthRecord,
   type ScheduleEntry,
   type VaccinationRecord,
 } from '@/lib/api';
@@ -43,6 +45,21 @@ function recorderMeta(
   return parts.join(' · ');
 }
 
+function maternalRiskFlags(record: MaternalHealthRecord): TranslationKey[] {
+  const flags: TranslationKey[] = [];
+  if (record.hivStatus === 'positive') flags.push('risk_flag_hiv');
+  if (record.gestationalDiabetes) flags.push('risk_flag_gdm');
+  if (record.hypertension) flags.push('risk_flag_htn');
+  if (record.anemia) flags.push('risk_flag_anemia');
+  if (record.malariaInPregnancy) flags.push('risk_flag_malaria');
+  if (record.apgarScore !== undefined && record.apgarScore !== null && record.apgarScore < 7) {
+    flags.push('risk_flag_low_apgar');
+  }
+  if (record.deliveryComplications) flags.push('risk_flag_complications');
+  if (record.geneticFamilyHistory) flags.push('risk_flag_genetic');
+  return flags;
+}
+
 export function ChildProfilePanel({ childId, accessToken }: { childId: string; accessToken: string }) {
   const { t } = useLanguage();
   const NUTRITIONAL_STATUS_LABEL: Record<string, string> = {
@@ -60,6 +77,7 @@ export function ChildProfilePanel({ childId, accessToken }: { childId: string; a
   const [vaccinations, setVaccinations] = useState<VaccinationRecord[]>([]);
   const [growth, setGrowth] = useState<GrowthRecord[]>([]);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
+  const [maternalHealth, setMaternalHealth] = useState<MaternalHealthRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -76,8 +94,11 @@ export function ChildProfilePanel({ childId, accessToken }: { childId: string; a
   }
 
   useEffect(() => {
-    Promise.all([getChildProfile(childId, accessToken), reload()])
-      .then(([p]) => setProfile(p))
+    Promise.all([getChildProfile(childId, accessToken), reload(), getMaternalHealth(childId, accessToken)])
+      .then(([p, , m]) => {
+        setProfile(p);
+        setMaternalHealth(m);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : 'Could not load this child.'))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -131,6 +152,76 @@ export function ChildProfilePanel({ childId, accessToken }: { childId: string; a
           </div>
         )}
       </div>
+
+      {maternalHealth && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-sm font-bold text-slate-900">{t('cp_maternal_title')}</h3>
+
+          {(() => {
+            const flags = maternalRiskFlags(maternalHealth);
+            return flags.length > 0 ? (
+              <div className="mb-4 rounded-xl bg-red-50 p-3">
+                <p className="mb-1 text-xs font-bold uppercase tracking-wide text-red-600">
+                  {t('cp_maternal_risk_flags')}
+                </p>
+                <ul className="space-y-0.5 text-sm text-red-700">
+                  {flags.map((flag) => (
+                    <li key={flag}>{t(flag)}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null;
+          })()}
+
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3">
+            {maternalHealth.gravida != null && (
+              <MeasureCard label={t('reg_gravida')} value={String(maternalHealth.gravida)} />
+            )}
+            {maternalHealth.para != null && <MeasureCard label={t('reg_para')} value={String(maternalHealth.para)} />}
+            {maternalHealth.gestationalAgeWeeks != null && (
+              <MeasureCard label={t('reg_gestational_age')} value={`${maternalHealth.gestationalAgeWeeks} wk`} />
+            )}
+            <MeasureCard
+              label={t('reg_hiv_status')}
+              value={
+                maternalHealth.hivStatus === 'positive'
+                  ? t('reg_hiv_positive')
+                  : maternalHealth.hivStatus === 'negative'
+                    ? t('reg_hiv_negative')
+                    : t('reg_hiv_unknown')
+              }
+            />
+            {maternalHealth.deliveryMode && (
+              <MeasureCard
+                label={t('reg_delivery_mode')}
+                value={
+                  maternalHealth.deliveryMode === 'vaginal'
+                    ? t('reg_delivery_vaginal')
+                    : maternalHealth.deliveryMode === 'cesarean'
+                      ? t('reg_delivery_cesarean')
+                      : t('reg_delivery_assisted')
+                }
+              />
+            )}
+            {maternalHealth.apgarScore != null && (
+              <MeasureCard label={t('reg_apgar_score')} value={String(maternalHealth.apgarScore)} />
+            )}
+          </div>
+
+          {maternalHealth.geneticFamilyHistory && (
+            <p className="mt-3 text-sm text-slate-600">
+              <span className="font-semibold text-slate-700">{t('reg_genetic_family_history')}: </span>
+              {maternalHealth.geneticFamilyHistory}
+            </p>
+          )}
+
+          {(maternalHealth.recordedByName || maternalHealth.facilityName) && (
+            <p className="mt-3 text-xs text-slate-400">
+              {recorderMeta(maternalHealth.recordedByName, null, null, maternalHealth.facilityName, t)}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-sm font-bold text-slate-900">{t('cp_growth_chart_title')}</h3>

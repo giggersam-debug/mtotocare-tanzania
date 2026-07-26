@@ -12,6 +12,7 @@ import { ParentModule } from './parent/parent.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { FacilitiesModule } from './facilities/facilities.module';
+import { MaternalHealthModule } from './maternal-health/maternal-health.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { FacilitiesModule } from './facilities/facilities.module';
     MessagingModule,
     RemindersModule,
     FacilitiesModule,
+    MaternalHealthModule,
   ],
 })
 export class AppModule {}

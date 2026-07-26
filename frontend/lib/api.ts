@@ -613,3 +613,77 @@ export async function login(username: string, password: string): Promise<LoginRe
 
   return res.json();
 }
+
+export type HivStatus = 'positive' | 'negative' | 'unknown';
+export type ArtAdherence = 'good' | 'fair' | 'poor' | 'n/a';
+export type DeliveryMode = 'vaginal' | 'cesarean' | 'assisted';
+
+export interface RecordMaternalHealthPayload {
+  childId: string;
+  gravida?: number;
+  para?: number;
+  estimatedDueDate?: string;
+  ancVisits?: number;
+  gestationalAgeWeeks?: number;
+  gestationalDiabetes?: boolean;
+  hypertension?: boolean;
+  anemia?: boolean;
+  malariaInPregnancy?: boolean;
+  hivStatus?: HivStatus;
+  artAdherence?: ArtAdherence;
+  deliveryMode?: DeliveryMode;
+  apgarScore?: number;
+  deliveryComplications?: string;
+  geneticFamilyHistory?: string;
+  consentGiven: boolean;
+}
+
+export interface MaternalHealthRecord {
+  maternalHealthRecordId: string;
+  gravida?: number | null;
+  para?: number | null;
+  estimatedDueDate?: string | null;
+  ancVisits?: number | null;
+  gestationalAgeWeeks?: number | null;
+  gestationalDiabetes: boolean;
+  hypertension: boolean;
+  anemia: boolean;
+  malariaInPregnancy: boolean;
+  hivStatus: HivStatus;
+  artAdherence?: ArtAdherence | null;
+  deliveryMode?: DeliveryMode | null;
+  apgarScore?: number | null;
+  deliveryComplications?: string | null;
+  geneticFamilyHistory?: string | null;
+  consentGiven: boolean;
+  recordedByName?: string | null;
+  facilityName?: string | null;
+  createdAt: string;
+}
+
+export async function recordMaternalHealth(
+  payload: RecordMaternalHealthPayload,
+  accessToken: string,
+): Promise<MaternalHealthRecord> {
+  const res = await fetch(`${API_BASE_URL}/maternal-health`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not save the maternal health record.');
+  }
+  return res.json();
+}
+
+export async function getMaternalHealth(
+  childId: string,
+  accessToken: string,
+): Promise<MaternalHealthRecord | null> {
+  const res = await fetch(`${API_BASE_URL}/maternal-health/child/${childId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
