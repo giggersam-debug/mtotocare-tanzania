@@ -12,7 +12,10 @@ import {
 import { PassportCard } from './PassportCard';
 import { useLanguage } from '@/lib/i18n';
 
-type Step = 'child' | 'guardian' | 'maternal' | 'success';
+// Mother/guardian first, then her pregnancy history, then the child's own
+// details last (entered after birth) — matches the real-world order these
+// facts become known in.
+type Step = 'guardian' | 'maternal' | 'child' | 'success';
 
 const initialState = {
   fullName: '',
@@ -45,7 +48,7 @@ const initialState = {
 
 export function RegisterChildForm({ accessToken }: { accessToken: string }) {
   const { t } = useLanguage();
-  const [step, setStep] = useState<Step>('child');
+  const [step, setStep] = useState<Step>('guardian');
   const [form, setForm] = useState(initialState);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +58,7 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  async function handleSubmit(withMaternal: boolean) {
+  async function handleSubmit() {
     setSubmitting(true);
     setError(null);
     try {
@@ -77,7 +80,10 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
         accessToken,
       );
 
-      if (withMaternal) {
+      // Only persisted if the mother's consent was given on the maternal
+      // history step — the backend enforces this too, but skip the call
+      // entirely rather than let it fail server-side.
+      if (form.maternalConsent) {
         try {
           await recordMaternalHealth(
             {
@@ -132,7 +138,7 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
           onClick={() => {
             setForm(initialState);
             setResult(null);
-            setStep('child');
+            setStep('guardian');
           }}
           className="text-sm font-semibold text-blue underline underline-offset-4"
         >
@@ -145,58 +151,14 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
   return (
     <div className="mx-auto w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-6 flex gap-2">
-        <div className={`h-1 flex-1 rounded-full ${step === 'child' ? 'bg-blue' : 'bg-green'}`} />
+        <div className={`h-1 flex-1 rounded-full ${step === 'guardian' ? 'bg-blue' : 'bg-green'}`} />
         <div
           className={`h-1 flex-1 rounded-full ${
-            step === 'guardian' ? 'bg-blue' : step === 'maternal' ? 'bg-green' : 'bg-slate-200'
+            step === 'maternal' ? 'bg-blue' : step === 'child' || step === 'success' ? 'bg-green' : 'bg-slate-200'
           }`}
         />
-        <div className={`h-1 flex-1 rounded-full ${step === 'maternal' ? 'bg-blue' : 'bg-slate-200'}`} />
+        <div className={`h-1 flex-1 rounded-full ${step === 'child' ? 'bg-blue' : 'bg-slate-200'}`} />
       </div>
-
-      {step === 'child' && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-slate-900">{t('reg_child_details')}</h2>
-
-          <Field label={t('reg_full_name')}>
-            <input className="input" value={form.fullName} onChange={(e) => update('fullName', e.target.value)} />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field label={t('reg_dob')}>
-              <input
-                type="date"
-                className="input"
-                value={form.dateOfBirth}
-                onChange={(e) => update('dateOfBirth', e.target.value)}
-              />
-            </Field>
-            <Field label={t('reg_sex')}>
-              <select className="input" value={form.sex} onChange={(e) => update('sex', e.target.value as 'male' | 'female')}>
-                <option value="female">{t('reg_female')}</option>
-                <option value="male">{t('reg_male')}</option>
-              </select>
-            </Field>
-          </div>
-
-          <Field label={t('reg_birth_weight')}>
-            <input className="input" value={form.birthWeightKg} onChange={(e) => update('birthWeightKg', e.target.value)} />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field label={t('reg_region')}>
-              <input className="input" value={form.region} onChange={(e) => update('region', e.target.value)} />
-            </Field>
-            <Field label={t('reg_district')}>
-              <input className="input" value={form.district} onChange={(e) => update('district', e.target.value)} />
-            </Field>
-          </div>
-
-          <button onClick={() => setStep('guardian')} disabled={!form.fullName || !form.dateOfBirth} className="btn-primary">
-            {t('reg_continue_guardian')}
-          </button>
-        </div>
-      )}
 
       {step === 'guardian' && (
         <div className="space-y-4">
@@ -241,18 +203,13 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
             {t('reg_whatsapp_optin')}
           </label>
 
-          <div className="flex gap-3">
-            <button onClick={() => setStep('child')} className="btn-secondary">
-              {t('reg_back')}
-            </button>
-            <button
-              onClick={() => setStep('maternal')}
-              disabled={!form.guardianFullName || !form.guardianPhone}
-              className="btn-primary"
-            >
-              {t('reg_continue_guardian')}
-            </button>
-          </div>
+          <button
+            onClick={() => setStep('maternal')}
+            disabled={!form.guardianFullName || !form.guardianPhone}
+            className="btn-primary"
+          >
+            {t('reg_continue')}
+          </button>
         </div>
       )}
 
@@ -396,21 +353,67 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
             {t('reg_maternal_consent')}
           </label>
 
-          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
-
           <div className="flex gap-3">
             <button onClick={() => setStep('guardian')} className="btn-secondary">
               {t('reg_back')}
             </button>
-            <button onClick={() => handleSubmit(false)} disabled={submitting} className="btn-secondary">
-              {t('reg_skip_maternal')}
+            <button onClick={() => setStep('child')} className="btn-primary">
+              {t('reg_continue')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 'child' && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold text-slate-900">{t('reg_child_details')}</h2>
+
+          <Field label={t('reg_full_name')}>
+            <input className="input" value={form.fullName} onChange={(e) => update('fullName', e.target.value)} />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label={t('reg_dob')}>
+              <input
+                type="date"
+                className="input"
+                value={form.dateOfBirth}
+                onChange={(e) => update('dateOfBirth', e.target.value)}
+              />
+            </Field>
+            <Field label={t('reg_sex')}>
+              <select className="input" value={form.sex} onChange={(e) => update('sex', e.target.value as 'male' | 'female')}>
+                <option value="female">{t('reg_female')}</option>
+                <option value="male">{t('reg_male')}</option>
+              </select>
+            </Field>
+          </div>
+
+          <Field label={t('reg_birth_weight')}>
+            <input className="input" value={form.birthWeightKg} onChange={(e) => update('birthWeightKg', e.target.value)} />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label={t('reg_region')}>
+              <input className="input" value={form.region} onChange={(e) => update('region', e.target.value)} />
+            </Field>
+            <Field label={t('reg_district')}>
+              <input className="input" value={form.district} onChange={(e) => update('district', e.target.value)} />
+            </Field>
+          </div>
+
+          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+
+          <div className="flex gap-3">
+            <button onClick={() => setStep('maternal')} className="btn-secondary">
+              {t('reg_back')}
             </button>
             <button
-              onClick={() => handleSubmit(true)}
-              disabled={submitting || !form.maternalConsent}
+              onClick={handleSubmit}
+              disabled={submitting || !form.fullName || !form.dateOfBirth}
               className="btn-primary"
             >
-              {submitting ? t('reg_issuing') : t('reg_save_maternal')}
+              {submitting ? t('reg_issuing') : t('reg_submit')}
             </button>
           </div>
         </div>

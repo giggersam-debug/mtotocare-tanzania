@@ -284,6 +284,7 @@ const DICTIONARY = {
     sw: 'Tuma vikumbusho vya chanjo kwa WhatsApp',
   },
   reg_back: { en: 'Back', sw: 'Rudi' },
+  reg_continue: { en: 'Continue', sw: 'Endelea' },
   reg_issuing: { en: 'Issuing passport…', sw: 'Inatoa pasi…' },
   reg_submit: { en: 'Register child & issue passport', sw: 'Sajili mtoto na toa pasi' },
 
