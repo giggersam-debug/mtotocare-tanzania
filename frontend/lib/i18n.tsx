@@ -288,6 +288,41 @@ const DICTIONARY = {
   reg_guardian_details: { en: 'Mother & Guardian Details', sw: 'Maelezo ya Mama na Mlezi' },
   reg_birth_facility: { en: 'Birth facility', sw: 'Kituo cha kuzalia' },
   reg_birth_facility_placeholder: { en: 'Select the hospital/facility', sw: 'Chagua hospitali/kituo' },
+
+  nav_register_mother: { en: 'Register Mother', sw: 'Sajili Mama' },
+  rm_eyebrow: { en: 'PRE-BIRTH REGISTRATION', sw: 'USAJILI KABLA YA KUJIFUNGUA' },
+  rm_title: { en: 'Register a mother', sw: 'Sajili mama' },
+  rm_subtitle: {
+    en: 'Register a mother during an antenatal visit, before her baby is born. Search her by phone later when registering the child.',
+    sw: 'Sajili mama wakati wa ziara ya kliniki ya wajawazito, kabla ya mtoto kuzaliwa. Mtafute kwa nambari yake ya simu baadaye wakati wa kusajili mtoto.',
+  },
+  rm_national_id: { en: 'National ID (optional)', sw: 'Kitambulisho cha Taifa (si lazima)' },
+  rm_register_btn: { en: 'Register mother', sw: 'Sajili mama' },
+  rm_registering: { en: 'Registering…', sw: 'Inasajili…' },
+  rm_already_registered: {
+    en: 'A record with this phone number already exists — reusing it.',
+    sw: 'Rekodi yenye nambari hii ya simu tayari ipo — inatumika hiyo.',
+  },
+  rm_success_title: { en: 'Mother registered', sw: 'Mama amesajiliwa' },
+  rm_success_body: {
+    en: 'On file. When the baby is born, search this phone number on the child registration page to link them.',
+    sw: 'Imehifadhiwa. Mtoto akizaliwa, tafuta nambari hii ya simu kwenye ukurasa wa usajili wa mtoto ili kuunganisha.',
+  },
+  rm_register_another: { en: 'Register another mother', sw: 'Sajili mama mwingine' },
+
+  cr_search_phone_label: { en: "Mother/guardian's phone number", sw: 'Nambari ya simu ya mama/mlezi' },
+  cr_search_btn: { en: 'Search', sw: 'Tafuta' },
+  cr_searching: { en: 'Searching…', sw: 'Inatafuta…' },
+  cr_found_title: { en: 'Found an existing record', sw: 'Rekodi iliyopo imepatikana' },
+  cr_not_found: {
+    en: 'No existing record for this phone number — enter her details below to register her now.',
+    sw: 'Hakuna rekodi kwa nambari hii — ingiza maelezo yake hapa chini kumsajili sasa.',
+  },
+  cr_search_different: { en: 'Search a different number', sw: 'Tafuta nambari nyingine' },
+  cr_has_pending_maternal: {
+    en: 'She already has pregnancy history on file — it will be linked to this child automatically.',
+    sw: 'Tayari ana historia ya ujauzito iliyohifadhiwa — itaunganishwa na mtoto huyu moja kwa moja.',
+  },
   reg_relation: { en: 'Relation to child', sw: 'Uhusiano na mtoto' },
   reg_mother: { en: 'Mother', sw: 'Mama' },
   reg_father: { en: 'Father', sw: 'Baba' },

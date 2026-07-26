@@ -12,9 +12,11 @@ export class MaternalHealthRecord {
   @PrimaryGeneratedColumn('uuid', { name: 'maternal_health_record_id' })
   maternalHealthRecordId: string;
 
-  @ManyToOne(() => Child)
+  // Nullable — a pregnancy record can be created before the child exists
+  // (registered during an antenatal visit) and attached to the child later.
+  @ManyToOne(() => Child, { nullable: true })
   @JoinColumn({ name: 'child_id' })
-  child: Child;
+  child?: Child;
 
   @ManyToOne(() => Guardian)
   @JoinColumn({ name: 'guardian_id' })

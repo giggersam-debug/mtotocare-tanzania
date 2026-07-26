@@ -2,12 +2,15 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import {
+  attachMaternalHealth,
   listFacilities,
   recordMaternalHealth,
   registerChild,
+  searchGuardianByPhone,
   type ArtAdherence,
   type DeliveryMode,
   type Facility,
+  type GuardianSearchResult,
   type HivStatus,
   type RegisterChildResponse,
 } from '@/lib/api';
@@ -62,6 +65,10 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RegisterChildResponse | null>(null);
   const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [guardianSearchStatus, setGuardianSearchStatus] = useState<'idle' | 'searching' | 'found' | 'not_found'>(
+    'idle',
+  );
+  const [foundGuardian, setFoundGuardian] = useState<GuardianSearchResult | null>(null);
 
   useEffect(() => {
     listFacilities(accessToken)
@@ -71,6 +78,41 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
 
   function update<K extends keyof typeof initialState>(key: K, value: (typeof initialState)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  async function handleSearchGuardian() {
+    setGuardianSearchStatus('searching');
+    setError(null);
+    const result = await searchGuardianByPhone(form.guardianPhone.trim(), accessToken);
+    if (result) {
+      setFoundGuardian(result);
+      setGuardianSearchStatus('found');
+      update('guardianFullName', result.fullName);
+      update('guardianRelation', result.relation);
+      update('whatsappOptIn', result.whatsappOptIn);
+    } else {
+      setFoundGuardian(null);
+      setGuardianSearchStatus('not_found');
+    }
+  }
+
+  function resetGuardianSearch() {
+    setGuardianSearchStatus('idle');
+    setFoundGuardian(null);
+    update('guardianFullName', '');
+    update('guardianRelation', 'mother');
+  }
+
+  function continueFromGuardianStep() {
+    // Skip the maternal-history step only when she's already got a pending
+    // pre-birth pregnancy record on file — it'll be linked automatically.
+    // Otherwise (new mother, or one with no history captured yet), still
+    // offer the maternal step so it can be taken now.
+    if (guardianSearchStatus === 'found' && foundGuardian?.hasPendingMaternalRecord) {
+      setStep('child');
+    } else {
+      setStep('maternal');
+    }
   }
 
   async function handleSubmit() {
@@ -104,6 +146,12 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
         },
         accessToken,
       );
+
+      // If she was found via phone search and already has a pre-birth
+      // pregnancy record on file, link it to this newborn now.
+      if (guardianSearchStatus === 'found' && foundGuardian?.hasPendingMaternalRecord) {
+        await attachMaternalHealth(foundGuardian.guardianId, response.child.childId, accessToken);
+      }
 
       // Only persisted if the mother's consent was given on the maternal
       // history step — the backend enforces this too, but skip the call
@@ -163,6 +211,8 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
           onClick={() => {
             setForm(initialState);
             setResult(null);
+            setGuardianSearchStatus('idle');
+            setFoundGuardian(null);
             setStep('guardian');
           }}
           className="text-sm font-semibold text-blue underline underline-offset-4"
@@ -189,44 +239,78 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
         <div className="space-y-4">
           <h2 className="text-lg font-bold text-slate-900">{t('reg_guardian_details')}</h2>
 
-          <Field label={t('reg_full_name')}>
-            <input
-              className="input"
-              value={form.guardianFullName}
-              onChange={(e) => update('guardianFullName', e.target.value)}
-            />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field label={t('reg_relation')}>
-              <select
-                className="input"
-                value={form.guardianRelation}
-                onChange={(e) => update('guardianRelation', e.target.value as typeof form.guardianRelation)}
-              >
-                <option value="mother">{t('reg_mother')}</option>
-                <option value="father">{t('reg_father')}</option>
-                <option value="guardian">{t('reg_guardian')}</option>
-              </select>
-            </Field>
-            <Field label={t('reg_phone')}>
+          <Field label={t('cr_search_phone_label')}>
+            <div className="flex gap-2">
               <input
                 className="input"
                 placeholder="+255 7xx xxx xxx"
                 value={form.guardianPhone}
+                disabled={guardianSearchStatus === 'found'}
                 onChange={(e) => update('guardianPhone', e.target.value)}
               />
-            </Field>
-          </div>
+              {guardianSearchStatus !== 'found' && (
+                <button
+                  type="button"
+                  onClick={handleSearchGuardian}
+                  disabled={!form.guardianPhone.trim() || guardianSearchStatus === 'searching'}
+                  className="btn-secondary w-auto shrink-0 px-4"
+                >
+                  {guardianSearchStatus === 'searching' ? t('cr_searching') : t('cr_search_btn')}
+                </button>
+              )}
+            </div>
+          </Field>
 
-          <label className="flex items-center gap-2 text-sm text-slate-600">
-            <input
-              type="checkbox"
-              checked={form.whatsappOptIn}
-              onChange={(e) => update('whatsappOptIn', e.target.checked)}
-            />
-            {t('reg_whatsapp_optin')}
-          </label>
+          {guardianSearchStatus === 'found' && foundGuardian && (
+            <div className="space-y-2 rounded-xl bg-green/10 p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-green">{t('cr_found_title')}</p>
+              <p className="text-sm font-semibold text-slate-800">{foundGuardian.fullName}</p>
+              <p className="text-xs text-slate-500">
+                {foundGuardian.relation} · {foundGuardian.phone}
+              </p>
+              {foundGuardian.hasPendingMaternalRecord && (
+                <p className="text-xs text-slate-600">{t('cr_has_pending_maternal')}</p>
+              )}
+              <button type="button" onClick={resetGuardianSearch} className="text-xs font-semibold text-blue underline">
+                {t('cr_search_different')}
+              </button>
+            </div>
+          )}
+
+          {guardianSearchStatus === 'not_found' && (
+            <div className="space-y-4">
+              <p className="text-xs text-slate-500">{t('cr_not_found')}</p>
+
+              <Field label={t('reg_full_name')}>
+                <input
+                  className="input"
+                  value={form.guardianFullName}
+                  onChange={(e) => update('guardianFullName', e.target.value)}
+                />
+              </Field>
+
+              <Field label={t('reg_relation')}>
+                <select
+                  className="input"
+                  value={form.guardianRelation}
+                  onChange={(e) => update('guardianRelation', e.target.value as typeof form.guardianRelation)}
+                >
+                  <option value="mother">{t('reg_mother')}</option>
+                  <option value="father">{t('reg_father')}</option>
+                  <option value="guardian">{t('reg_guardian')}</option>
+                </select>
+              </Field>
+
+              <label className="flex items-center gap-2 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={form.whatsappOptIn}
+                  onChange={(e) => update('whatsappOptIn', e.target.checked)}
+                />
+                {t('reg_whatsapp_optin')}
+              </label>
+            </div>
+          )}
 
           <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
             <input
@@ -286,9 +370,13 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
             </div>
           )}
 
+          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+
           <button
-            onClick={() => setStep('maternal')}
+            onClick={continueFromGuardianStep}
             disabled={
+              guardianSearchStatus === 'idle' ||
+              guardianSearchStatus === 'searching' ||
               !form.guardianFullName ||
               !form.guardianPhone ||
               (form.addSecondParent && (!form.secondGuardianFullName || !form.secondGuardianPhone))

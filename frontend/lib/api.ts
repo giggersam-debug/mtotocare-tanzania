@@ -711,3 +711,100 @@ export async function getMaternalHealth(
   if (!res.ok) return null;
   return res.json();
 }
+
+export interface RegisterGuardianPayload {
+  fullName: string;
+  relation: 'mother' | 'father' | 'guardian';
+  phone: string;
+  whatsappOptIn?: boolean;
+  nationalIdRef?: string;
+}
+
+export interface GuardianRecord {
+  guardianId: string;
+  fullName: string;
+  relation: 'mother' | 'father' | 'guardian';
+  phone: string;
+  whatsappOptIn: boolean;
+}
+
+export interface GuardianSearchResult extends GuardianRecord {
+  childrenCount: number;
+  hasPendingMaternalRecord: boolean;
+}
+
+export async function registerGuardian(
+  payload: RegisterGuardianPayload,
+  accessToken: string,
+): Promise<GuardianRecord> {
+  const res = await fetch(`${API_BASE_URL}/guardians`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not register the mother/guardian.');
+  }
+  return res.json();
+}
+
+export async function searchGuardianByPhone(
+  phone: string,
+  accessToken: string,
+): Promise<GuardianSearchResult | null> {
+  const res = await fetch(`${API_BASE_URL}/guardians/search?phone=${encodeURIComponent(phone)}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) return null;
+  const body = await res.json();
+  return body ?? null;
+}
+
+export interface RecordMaternalHealthForGuardianPayload {
+  guardianId: string;
+  gravida?: number;
+  para?: number;
+  estimatedDueDate?: string;
+  ancVisits?: number;
+  gestationalAgeWeeks?: number;
+  gestationalDiabetes?: boolean;
+  hypertension?: boolean;
+  anemia?: boolean;
+  malariaInPregnancy?: boolean;
+  hivStatus?: HivStatus;
+  artAdherence?: ArtAdherence;
+  geneticFamilyHistory?: string;
+  consentGiven: boolean;
+}
+
+export async function recordMaternalHealthForGuardian(
+  payload: RecordMaternalHealthForGuardianPayload,
+  accessToken: string,
+): Promise<MaternalHealthRecord> {
+  const res = await fetch(`${API_BASE_URL}/maternal-health/guardian`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not save the pregnancy history.');
+  }
+  return res.json();
+}
+
+export async function attachMaternalHealth(
+  guardianId: string,
+  childId: string,
+  accessToken: string,
+): Promise<void> {
+  await fetch(`${API_BASE_URL}/maternal-health/attach`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ guardianId, childId }),
+  }).catch(() => {
+    // Best-effort — if this fails the child record still exists, it just
+    // won't show the pre-birth pregnancy history.
+  });
+}

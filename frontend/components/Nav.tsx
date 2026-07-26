@@ -44,6 +44,7 @@ export function Nav() {
 
   const links: { href: string; key: TranslationKey }[] = [
     { href: '/', key: 'nav_home' },
+    { href: '/register-mother', key: 'nav_register_mother' },
     { href: '/register', key: 'nav_registration' },
     { href: '/children', key: 'nav_child_lookup' },
     { href: '/scan', key: 'nav_vaccinations' },
