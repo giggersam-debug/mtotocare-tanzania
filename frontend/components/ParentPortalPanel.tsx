@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { parentLookup, type ParentLookupResponse, type ScheduleEntry } from '@/lib/api';
+import { parentLookup, requestParentOtp, type ParentLookupResponse, type ScheduleEntry } from '@/lib/api';
 import { useLanguage } from '@/lib/i18n';
 
 const STATUS_STYLE: Record<ScheduleEntry['status'], string> = {
@@ -69,17 +69,33 @@ export function ParentPortalPanel() {
   };
   const [qrToken, setQrToken] = useState('');
   const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
   const [result, setResult] = useState<ParentLookupResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleRequestOtp(e: FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      await requestParentOtp(qrToken.trim(), phone.trim());
+      setOtpSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send a verification code.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerify(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      const res = await parentLookup(qrToken.trim(), phone.trim());
+      const res = await parentLookup(qrToken.trim(), phone.trim(), otp.trim());
       setResult(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'We could not find a matching record.');
@@ -88,46 +104,97 @@ export function ParentPortalPanel() {
     }
   }
 
+  function resetToPhoneStep() {
+    setOtpSent(false);
+    setOtp('');
+    setError(null);
+  }
+
   const upcoming = result?.schedule.filter((s) => s.status === 'due' || s.status === 'overdue') ?? [];
   const chartData =
     result?.growth.filter((g) => g.weightKg !== undefined).map((g) => ({ date: g.visitDate, weight: g.weightKg })) ?? [];
 
   return (
     <div className="mx-auto w-full max-w-lg space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-900">{t('pp_find_title')}</h2>
-        <p className="text-xs text-slate-500">{t('pp_find_desc')}</p>
+      {!otpSent && (
+        <form
+          onSubmit={handleRequestOtp}
+          className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+        >
+          <h2 className="text-lg font-bold text-slate-900">{t('pp_find_title')}</h2>
+          <p className="text-xs text-slate-500">{t('pp_find_desc')}</p>
 
-        <label className="block">
-          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {t('pp_qr_token')}
-          </span>
-          <input
-            className="input font-mono text-xs"
-            value={qrToken}
-            onChange={(e) => setQrToken(e.target.value)}
-            placeholder={t('pp_qr_placeholder')}
-          />
-        </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {t('pp_qr_token')}
+            </span>
+            <input
+              className="input font-mono text-xs"
+              value={qrToken}
+              onChange={(e) => setQrToken(e.target.value)}
+              placeholder={t('pp_qr_placeholder')}
+            />
+          </label>
 
-        <label className="block">
-          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {t('pp_phone')}
-          </span>
-          <input
-            className="input"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+255 7xx xxx xxx"
-          />
-        </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {t('pp_phone')}
+            </span>
+            <input
+              className="input"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+255 7xx xxx xxx"
+            />
+          </label>
 
-        {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
-        <button type="submit" disabled={loading || !qrToken.trim() || !phone.trim()} className="btn-primary">
-          {loading ? t('pp_looking_up') : t('pp_view_record')}
-        </button>
-      </form>
+          <button type="submit" disabled={loading || !qrToken.trim() || !phone.trim()} className="btn-primary">
+            {loading ? t('pp_sending_code') : t('pp_send_code')}
+          </button>
+        </form>
+      )}
+
+      {otpSent && !result && (
+        <form onSubmit={handleVerify} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">{t('pp_find_title')}</h2>
+          <p className="text-xs text-slate-500">{t('pp_otp_sent_hint')}</p>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {t('pp_otp_label')}
+            </span>
+            <input
+              className="input font-mono tracking-widest"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              placeholder={t('pp_otp_placeholder')}
+              maxLength={6}
+            />
+          </label>
+
+          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+
+          <button type="submit" disabled={loading || otp.trim().length !== 6} className="btn-primary">
+            {loading ? t('pp_verifying') : t('pp_verify_view_record')}
+          </button>
+
+          <div className="flex justify-between text-xs">
+            <button type="button" onClick={resetToPhoneStep} className="font-semibold text-slate-500 underline">
+              {t('pp_change_number')}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleRequestOtp(e as unknown as FormEvent)}
+              disabled={loading}
+              className="font-semibold text-blue underline"
+            >
+              {t('pp_resend_code')}
+            </button>
+          </div>
+        </form>
+      )}
 
       {result && (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

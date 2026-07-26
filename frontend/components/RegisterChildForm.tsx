@@ -28,6 +28,11 @@ const initialState = {
   guardianRelation: 'mother' as 'mother' | 'father' | 'guardian',
   guardianPhone: '',
   whatsappOptIn: true,
+  addSecondParent: false,
+  secondGuardianFullName: '',
+  secondGuardianRelation: 'father' as 'mother' | 'father' | 'guardian',
+  secondGuardianPhone: '',
+  secondGuardianWhatsappOptIn: false,
   gravida: '',
   para: '',
   estimatedDueDate: '',
@@ -76,6 +81,15 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
             phone: form.guardianPhone,
             whatsappOptIn: form.whatsappOptIn,
           },
+          secondGuardian:
+            form.addSecondParent && form.secondGuardianFullName && form.secondGuardianPhone
+              ? {
+                  fullName: form.secondGuardianFullName,
+                  relation: form.secondGuardianRelation,
+                  phone: form.secondGuardianPhone,
+                  whatsappOptIn: form.secondGuardianWhatsappOptIn,
+                }
+              : undefined,
         },
         accessToken,
       );
@@ -203,9 +217,71 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
             {t('reg_whatsapp_optin')}
           </label>
 
+          <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <input
+              type="checkbox"
+              checked={form.addSecondParent}
+              onChange={(e) => update('addSecondParent', e.target.checked)}
+            />
+            {t('reg_add_second_parent')}
+          </label>
+
+          {form.addSecondParent && (
+            <div className="space-y-4 rounded-xl bg-slate-50 p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                {t('reg_second_parent_details')}
+              </p>
+
+              <Field label={t('reg_full_name')}>
+                <input
+                  className="input"
+                  value={form.secondGuardianFullName}
+                  onChange={(e) => update('secondGuardianFullName', e.target.value)}
+                />
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label={t('reg_relation')}>
+                  <select
+                    className="input"
+                    value={form.secondGuardianRelation}
+                    onChange={(e) =>
+                      update('secondGuardianRelation', e.target.value as typeof form.secondGuardianRelation)
+                    }
+                  >
+                    <option value="mother">{t('reg_mother')}</option>
+                    <option value="father">{t('reg_father')}</option>
+                    <option value="guardian">{t('reg_guardian')}</option>
+                  </select>
+                </Field>
+                <Field label={t('reg_phone')}>
+                  <input
+                    className="input"
+                    placeholder="+255 7xx xxx xxx"
+                    value={form.secondGuardianPhone}
+                    onChange={(e) => update('secondGuardianPhone', e.target.value)}
+                  />
+                </Field>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={form.secondGuardianWhatsappOptIn}
+                  onChange={(e) => update('secondGuardianWhatsappOptIn', e.target.checked)}
+                />
+                {t('reg_whatsapp_optin')}
+              </label>
+            </div>
+          )}
+
           <button
             onClick={() => setStep('maternal')}
-            disabled={!form.guardianFullName || !form.guardianPhone}
+            disabled={
+              !form.guardianFullName ||
+              !form.guardianPhone ||
+              (form.addSecondParent && (!form.secondGuardianFullName || !form.secondGuardianPhone))
+            }
             className="btn-primary"
           >
             {t('reg_continue')}

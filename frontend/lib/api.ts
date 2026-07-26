@@ -15,6 +15,12 @@ export interface RegisterChildPayload {
     phone: string;
     whatsappOptIn?: boolean;
   };
+  secondGuardian?: {
+    fullName: string;
+    relation: 'mother' | 'father' | 'guardian';
+    phone: string;
+    whatsappOptIn?: boolean;
+  };
 }
 
 export interface RegisterChildResponse {
@@ -98,6 +104,7 @@ export interface ChildProfile {
   ward?: string;
   village?: string;
   guardian?: { fullName: string; relation: string; phone: string };
+  secondGuardian?: { fullName: string; relation: string; phone: string };
 }
 
 export async function getChildProfile(childId: string, accessToken: string): Promise<ChildProfile> {
@@ -366,11 +373,26 @@ export interface ParentLookupResponse {
   schedule: ScheduleEntry[];
 }
 
-export async function parentLookup(qrToken: string, phone: string): Promise<ParentLookupResponse> {
-  const res = await fetch(`${API_BASE_URL}/parent/lookup`, {
+export async function requestParentOtp(qrToken: string, phone: string): Promise<{ sent: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/parent/request-otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ qrToken, phone }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not send a verification code. Please try again.');
+  }
+
+  return res.json();
+}
+
+export async function parentLookup(qrToken: string, phone: string, otp: string): Promise<ParentLookupResponse> {
+  const res = await fetch(`${API_BASE_URL}/parent/lookup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ qrToken, phone, otp }),
   });
 
   if (!res.ok) {

@@ -132,6 +132,12 @@ export function ChildProfilePanel({ childId, accessToken }: { childId: string; a
                 {profile.guardian.phone}
               </p>
             )}
+            {profile.secondGuardian && (
+              <p className="mt-0.5 text-xs text-slate-400">
+                {t('reg_guardian')}: {profile.secondGuardian.fullName} ({profile.secondGuardian.relation}) ·{' '}
+                {profile.secondGuardian.phone}
+              </p>
+            )}
           </div>
           {latestGrowth?.nutritionalStatus && (
             <span

@@ -74,4 +74,12 @@ export class CreateChildDto {
   @ValidateNested()
   @Type(() => GuardianDto)
   guardian: GuardianDto;
+
+  // Optional second parent (typically the father when `guardian` above is
+  // the mother) captured during pregnancy/registration. Either parent's
+  // phone can later be used to request Parent Portal access.
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GuardianDto)
+  secondGuardian?: GuardianDto;
 }

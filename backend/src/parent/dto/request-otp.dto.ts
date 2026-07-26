@@ -1,6 +1,6 @@
 import { IsString, Length } from 'class-validator';
 
-export class ParentLookupDto {
+export class RequestOtpDto {
   @IsString()
   @Length(1, 64)
   qrToken: string;
@@ -8,8 +8,4 @@ export class ParentLookupDto {
   @IsString()
   @Length(6, 20)
   phone: string;
-
-  @IsString()
-  @Length(6, 6)
-  otp: string;
 }

@@ -38,6 +38,11 @@ export class Child {
   @JoinColumn({ name: 'guardian_id' })
   guardian: Guardian;
 
+  // Optional second parent (e.g. father alongside mother).
+  @ManyToOne(() => Guardian, { nullable: true })
+  @JoinColumn({ name: 'second_guardian_id' })
+  secondGuardian?: Guardian;
+
   @Column({ length: 80, nullable: true })
   region?: string;
 

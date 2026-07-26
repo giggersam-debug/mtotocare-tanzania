@@ -43,6 +43,21 @@ export class ChildrenService {
         guardian = await guardianRepo.save(guardian);
       }
 
+      let secondGuardian: Guardian | undefined;
+      if (dto.secondGuardian) {
+        secondGuardian = (await guardianRepo.findOne({ where: { phone: dto.secondGuardian.phone } })) ?? undefined;
+        if (!secondGuardian) {
+          secondGuardian = guardianRepo.create({
+            fullName: dto.secondGuardian.fullName,
+            relation: dto.secondGuardian.relation,
+            phone: dto.secondGuardian.phone,
+            whatsappOptIn: dto.secondGuardian.whatsappOptIn ?? false,
+            nationalIdRef: dto.secondGuardian.nationalIdRef,
+          });
+          secondGuardian = await guardianRepo.save(secondGuardian);
+        }
+      }
+
       const qrToken = this.qr.generateToken();
 
       const child = childRepo.create({
@@ -57,6 +72,7 @@ export class ChildrenService {
         village: dto.village,
         birthRegistrationNumber: dto.birthRegistrationNumber,
         guardian,
+        secondGuardian,
         qrToken,
         createdBy: registeredByUserId,
       });
@@ -136,7 +152,7 @@ export class ChildrenService {
 
   /** Full bio for the Child Profile page. */
   async getById(childId: string) {
-    const child = await this.children.findOne({ where: { childId }, relations: ['guardian'] });
+    const child = await this.children.findOne({ where: { childId }, relations: ['guardian', 'secondGuardian'] });
     if (!child) throw new NotFoundException('No child found for that ID');
 
     return {
@@ -157,13 +173,29 @@ export class ChildrenService {
             phone: child.guardian.phone,
           }
         : undefined,
+      secondGuardian: child.secondGuardian
+        ? {
+            fullName: child.secondGuardian.fullName,
+            relation: child.secondGuardian.relation,
+            phone: child.secondGuardian.phone,
+          }
+        : undefined,
     };
   }
 
-  /** Public Parent Portal access: QR token + guardian phone must both match. */
+  /** Finds the child for a QR token and checks whether the given phone belongs to either parent on file. */
+  async findByQrTokenForPortal(qrToken: string) {
+    const child = await this.children.findOne({ where: { qrToken }, relations: ['guardian', 'secondGuardian'] });
+    if (!child) throw new UnauthorizedException('We could not verify that phone number for this health ID.');
+    return child;
+  }
+
+  /** Public Parent Portal access: QR token + a phone matching either parent on file. */
   async verifyGuardianAccess(qrToken: string, phone: string) {
-    const child = await this.children.findOne({ where: { qrToken }, relations: ['guardian'] });
-    if (!child || !child.guardian || child.guardian.phone.trim() !== phone.trim()) {
+    const child = await this.findByQrTokenForPortal(qrToken);
+    const trimmed = phone.trim();
+    const matches = child.guardian?.phone.trim() === trimmed || child.secondGuardian?.phone.trim() === trimmed;
+    if (!matches) {
       throw new UnauthorizedException('We could not verify that phone number for this health ID.');
     }
     return child;
