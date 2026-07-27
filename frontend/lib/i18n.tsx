@@ -318,6 +318,9 @@ const DICTIONARY = {
   rm_register_another: { en: 'Register another mother', sw: 'Sajili mama mwingine' },
 
   cr_search_phone_label: { en: "Mother/guardian's phone number", sw: 'Nambari ya simu ya mama/mlezi' },
+  cr_search_nationalid_label: { en: "Mother/guardian's National ID", sw: 'Kitambulisho cha Taifa cha mama/mlezi' },
+  cr_switch_to_phone: { en: "Can't find her ID? Search by phone instead", sw: 'Huwezi kupata kitambulisho? Tafuta kwa simu badala yake' },
+  cr_switch_to_nationalid: { en: 'Search by National ID instead', sw: 'Tafuta kwa Kitambulisho cha Taifa badala yake' },
   cr_search_btn: { en: 'Search', sw: 'Tafuta' },
   cr_searching: { en: 'Searching…', sw: 'Inatafuta…' },
   cr_found_title: { en: 'Found an existing record', sw: 'Rekodi iliyopo imepatikana' },

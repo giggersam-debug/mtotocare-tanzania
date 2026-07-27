@@ -7,6 +7,7 @@ import {
   listFacilities,
   recordMaternalHealth,
   registerChild,
+  searchGuardianByNationalId,
   searchGuardianByPhone,
   type ArtAdherence,
   type DeliveryMode,
@@ -80,6 +81,11 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
   );
   const [foundGuardian, setFoundGuardian] = useState<GuardianSearchResult | null>(null);
   const [previousMaternal, setPreviousMaternal] = useState<MaternalHealthRecord | null>(null);
+  // National ID is how a mother is actually identified at a real clinic
+  // visit, so it's the primary search key — phone stays available as a
+  // fallback for when she doesn't have her ID card on hand, or is a
+  // "guardian" relation who isn't required to have one on file.
+  const [searchMode, setSearchMode] = useState<'nationalId' | 'phone'>('nationalId');
 
   useEffect(() => {
     listFacilities(accessToken)
@@ -123,13 +129,20 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
   async function handleSearchGuardian() {
     setGuardianSearchStatus('searching');
     setError(null);
-    const result = await searchGuardianByPhone(form.guardianPhone.trim(), accessToken);
+    const result =
+      searchMode === 'nationalId'
+        ? await searchGuardianByNationalId(form.guardianNationalId.trim(), accessToken)
+        : await searchGuardianByPhone(form.guardianPhone.trim(), accessToken);
     if (result) {
       setFoundGuardian(result);
       setGuardianSearchStatus('found');
       update('guardianFullName', result.fullName);
       update('guardianRelation', result.relation);
       update('whatsappOptIn', result.whatsappOptIn);
+      // Whichever field wasn't the search key still needs to be filled in
+      // for the registration payload later.
+      update('guardianPhone', result.phone);
+      update('guardianNationalId', result.nationalIdRef ?? '');
       // Pull up her prior ANC history so the nurse can see where she's been
       // seen before and when she's due back, before the baby even exists.
       if (result.hasPendingMaternalRecord) {
@@ -149,6 +162,13 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
     setPreviousMaternal(null);
     update('guardianFullName', '');
     update('guardianRelation', 'mother');
+    update('guardianPhone', '');
+    update('guardianNationalId', '');
+  }
+
+  function switchSearchMode() {
+    setSearchMode((m) => (m === 'nationalId' ? 'phone' : 'nationalId'));
+    resetGuardianSearch();
   }
 
   function continueFromGuardianStep() {
@@ -296,20 +316,34 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
         <div className="space-y-4">
           <h2 className="text-lg font-bold text-slate-900">{t('reg_guardian_details')}</h2>
 
-          <Field label={t('cr_search_phone_label')}>
+          <Field label={searchMode === 'nationalId' ? t('cr_search_nationalid_label') : t('cr_search_phone_label')}>
             <div className="flex gap-2">
-              <input
-                className="input"
-                placeholder="+255 7xx xxx xxx"
-                value={form.guardianPhone}
-                disabled={guardianSearchStatus === 'found'}
-                onChange={(e) => update('guardianPhone', e.target.value)}
-              />
+              {searchMode === 'nationalId' ? (
+                <input
+                  className="input"
+                  placeholder={NIDA_PLACEHOLDER}
+                  maxLength={23}
+                  value={form.guardianNationalId}
+                  disabled={guardianSearchStatus === 'found'}
+                  onChange={(e) => update('guardianNationalId', formatNida(e.target.value))}
+                />
+              ) : (
+                <input
+                  className="input"
+                  placeholder="+255 7xx xxx xxx"
+                  value={form.guardianPhone}
+                  disabled={guardianSearchStatus === 'found'}
+                  onChange={(e) => update('guardianPhone', e.target.value)}
+                />
+              )}
               {guardianSearchStatus !== 'found' && (
                 <button
                   type="button"
                   onClick={handleSearchGuardian}
-                  disabled={!form.guardianPhone.trim() || guardianSearchStatus === 'searching'}
+                  disabled={
+                    (searchMode === 'nationalId' ? !form.guardianNationalId.trim() : !form.guardianPhone.trim()) ||
+                    guardianSearchStatus === 'searching'
+                  }
                   className="btn-secondary w-auto shrink-0 px-4"
                 >
                   {guardianSearchStatus === 'searching' ? t('cr_searching') : t('cr_search_btn')}
@@ -317,6 +351,16 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
               )}
             </div>
           </Field>
+
+          {guardianSearchStatus !== 'found' && (
+            <button
+              type="button"
+              onClick={switchSearchMode}
+              className="text-xs font-semibold text-blue underline underline-offset-2"
+            >
+              {searchMode === 'nationalId' ? t('cr_switch_to_phone') : t('cr_switch_to_nationalid')}
+            </button>
+          )}
 
           {guardianSearchStatus === 'found' && foundGuardian && (
             <div className="space-y-2 rounded-xl bg-green/10 p-4">
@@ -384,17 +428,28 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
                 </select>
               </Field>
 
-              <Field
-                label={form.guardianRelation === 'guardian' ? t('rm_national_id') : `${t('rm_national_id')} *`}
-              >
-                <input
-                  className="input"
-                  placeholder={NIDA_PLACEHOLDER}
-                  maxLength={23}
-                  value={form.guardianNationalId}
-                  onChange={(e) => update('guardianNationalId', formatNida(e.target.value))}
-                />
-              </Field>
+              {searchMode === 'nationalId' ? (
+                <Field label={`${t('reg_phone')} *`}>
+                  <input
+                    className="input"
+                    placeholder="+255 7xx xxx xxx"
+                    value={form.guardianPhone}
+                    onChange={(e) => update('guardianPhone', e.target.value)}
+                  />
+                </Field>
+              ) : (
+                <Field
+                  label={form.guardianRelation === 'guardian' ? t('rm_national_id') : `${t('rm_national_id')} *`}
+                >
+                  <input
+                    className="input"
+                    placeholder={NIDA_PLACEHOLDER}
+                    maxLength={23}
+                    value={form.guardianNationalId}
+                    onChange={(e) => update('guardianNationalId', formatNida(e.target.value))}
+                  />
+                </Field>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <Field label={`${t('reg_occupation')} *`}>

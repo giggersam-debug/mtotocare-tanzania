@@ -31,11 +31,28 @@ export class GuardiansService {
     return guardian;
   }
 
-  /** Used by child registration's "search for an existing mother" step. */
+  /**
+   * Used by child registration's "search for an existing mother" step —
+   * National ID is the primary lookup (matches how she'd be identified at
+   * a real clinic); phone remains a fallback for the (rarer) case where
+   * she doesn't have her ID on hand, or is a "guardian" relation who was
+   * never required to have one on file.
+   */
+  async searchByNationalId(nationalIdRef: string) {
+    const guardian = await this.guardians.findOne({
+      where: { nationalIdRef: nationalIdRef.trim() },
+      relations: ['children'],
+    });
+    return guardian ? this.toSearchResult(guardian) : null;
+  }
+
+  /** Fallback lookup when the mother doesn't have her National ID on hand. */
   async searchByPhone(phone: string) {
     const guardian = await this.guardians.findOne({ where: { phone: phone.trim() }, relations: ['children'] });
-    if (!guardian) return null;
+    return guardian ? this.toSearchResult(guardian) : null;
+  }
 
+  private async toSearchResult(guardian: Guardian) {
     const pendingMaternalRecord = await this.maternalHealthRecords.findOne({
       where: { guardian: { guardianId: guardian.guardianId }, child: IsNull() },
     });

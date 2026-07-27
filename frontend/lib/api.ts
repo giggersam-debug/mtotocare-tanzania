@@ -826,6 +826,22 @@ export async function registerGuardian(
   return res.json();
 }
 
+// Primary lookup for child registration — matches how a mother is actually
+// identified at a real clinic visit.
+export async function searchGuardianByNationalId(
+  nationalId: string,
+  accessToken: string,
+): Promise<GuardianSearchResult | null> {
+  const res = await fetch(`${API_BASE_URL}/guardians/search?nationalId=${encodeURIComponent(nationalId)}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) return null;
+  const body = await res.json();
+  return body ?? null;
+}
+
+// Fallback lookup for when she doesn't have her National ID on hand, or is
+// a "guardian" relation who was never required to have one on file.
 export async function searchGuardianByPhone(
   phone: string,
   accessToken: string,
