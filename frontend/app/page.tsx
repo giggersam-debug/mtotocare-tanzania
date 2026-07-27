@@ -16,7 +16,9 @@ export default function HomePage() {
   const [facilities, setFacilities] = useState<PublicFacility[] | null>(null);
 
   useEffect(() => {
-    listPublicFacilities().then(setFacilities);
+    listPublicFacilities()
+      .then(setFacilities)
+      .catch(() => setFacilities([]));
   }, []);
 
   return (

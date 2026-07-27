@@ -499,9 +499,14 @@ export interface PublicFacility {
 
 // Unauthenticated — used on the public home page.
 export async function listPublicFacilities(): Promise<PublicFacility[]> {
-  const res = await fetch(`${API_BASE_URL}/facilities-public`);
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE_URL}/facilities-public`);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    // Network/CORS failure — don't let this hang forever, just show empty.
+    return [];
+  }
 }
 
 export interface StaffSummary {
