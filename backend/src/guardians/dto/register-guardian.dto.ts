@@ -1,4 +1,8 @@
-import { IsBoolean, IsIn, IsOptional, IsPhoneNumber, IsString, Length, ValidateIf } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsPhoneNumber, IsString, Length, Matches, ValidateIf } from 'class-validator';
+
+// Tanzania NIDA number, as printed on the physical ID card:
+// YYYYMMDD-XXXXX-XXXXX-XX (8-5-5-2 digits).
+const NIDA_PATTERN = /^\d{8}-\d{5}-\d{5}-\d{2}$/;
 
 export class RegisterGuardianDto {
   @IsString()
@@ -20,7 +24,7 @@ export class RegisterGuardianDto {
   // there.
   @ValidateIf((o) => o.relation !== 'guardian')
   @IsString()
-  @Length(4, 30)
+  @Matches(NIDA_PATTERN, { message: 'nationalIdRef must be in the format YYYYMMDD-XXXXX-XXXXX-XX' })
   nationalIdRef?: string;
 
   @IsString()

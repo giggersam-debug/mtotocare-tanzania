@@ -16,6 +16,7 @@ import {
 } from '@/lib/api';
 import { PassportCard } from './PassportCard';
 import { useLanguage } from '@/lib/i18n';
+import { formatNida, NIDA_PLACEHOLDER } from '@/lib/nida';
 
 // Mother/guardian first, then her pregnancy history, then the child's own
 // details last (entered after birth) — matches the real-world order these
@@ -349,8 +350,10 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
               >
                 <input
                   className="input"
+                  placeholder={NIDA_PLACEHOLDER}
+                  maxLength={23}
                   value={form.guardianNationalId}
-                  onChange={(e) => update('guardianNationalId', e.target.value)}
+                  onChange={(e) => update('guardianNationalId', formatNida(e.target.value))}
                 />
               </Field>
 
@@ -436,8 +439,10 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
               >
                 <input
                   className="input"
+                  placeholder={NIDA_PLACEHOLDER}
+                  maxLength={23}
                   value={form.secondGuardianNationalId}
-                  onChange={(e) => update('secondGuardianNationalId', e.target.value)}
+                  onChange={(e) => update('secondGuardianNationalId', formatNida(e.target.value))}
                 />
               </Field>
 

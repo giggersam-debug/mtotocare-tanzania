@@ -9,6 +9,7 @@ import {
   type HivStatus,
 } from '@/lib/api';
 import { useLanguage } from '@/lib/i18n';
+import { formatNida, NIDA_PLACEHOLDER } from '@/lib/nida';
 
 type Step = 'guardian' | 'maternal' | 'success';
 
@@ -167,8 +168,10 @@ export function RegisterMotherForm({ accessToken }: { accessToken: string }) {
           <Field label={form.relation === 'guardian' ? t('rm_national_id') : `${t('rm_national_id')} *`}>
             <input
               className="input"
+              placeholder={NIDA_PLACEHOLDER}
+              maxLength={23}
               value={form.nationalIdRef}
-              onChange={(e) => update('nationalIdRef', e.target.value)}
+              onChange={(e) => update('nationalIdRef', formatNida(e.target.value))}
             />
           </Field>
 

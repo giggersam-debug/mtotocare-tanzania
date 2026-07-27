@@ -8,10 +8,15 @@ import {
   IsPhoneNumber,
   IsString,
   Length,
+  Matches,
   Max,
   Min,
   ValidateNested,
 } from 'class-validator';
+
+// Tanzania NIDA number, as printed on the physical ID card:
+// YYYYMMDD-XXXXX-XXXXX-XX (8-5-5-2 digits).
+const NIDA_PATTERN = /^\d{8}-\d{5}-\d{5}-\d{2}$/;
 
 class GuardianDto {
   @IsString()
@@ -35,7 +40,7 @@ class GuardianDto {
   // optional at the DTO level rather than blocking that path.
   @IsOptional()
   @IsString()
-  @Length(4, 30)
+  @Matches(NIDA_PATTERN, { message: 'nationalIdRef must be in the format YYYYMMDD-XXXXX-XXXXX-XX' })
   nationalIdRef?: string;
 
   @IsOptional()
