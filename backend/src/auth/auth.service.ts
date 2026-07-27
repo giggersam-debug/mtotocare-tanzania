@@ -20,6 +20,7 @@ function toStaffSummary(user: User) {
     employeeNumber: user.employeeNumber ?? null,
     facilityName: user.facility?.name ?? null,
     isActive: user.isActive,
+    lastLoginAt: user.lastLoginAt ?? null,
     createdAt: user.createdAt,
   };
 }
@@ -44,6 +45,9 @@ export class AuthService {
     if (!valid) {
       throw new UnauthorizedException('Invalid username or password');
     }
+
+    // Best-effort — a failure here shouldn't block the login itself.
+    this.users.update(user.userId, { lastLoginAt: new Date() }).catch(() => undefined);
 
     const payload = {
       sub: user.userId,

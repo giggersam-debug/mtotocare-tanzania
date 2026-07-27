@@ -48,10 +48,11 @@ const DICTIONARY = {
   login_submit: { en: 'Sign in', sw: 'Ingia' },
   login_submitting: { en: 'Signing in…', sw: 'Inaingia…' },
 
+  settings_eyebrow: { en: 'Facility & Staff', sw: 'Kituo na Wafanyakazi' },
   settings_title: { en: 'Facility & staff settings', sw: 'Mipangilio ya kituo na wafanyakazi' },
   settings_subtitle: {
-    en: 'Manage staff accounts and facilities for your facility.',
-    sw: 'Simamia akaunti za wafanyakazi na vituo kwa kituo chako.',
+    en: 'Staff accounts and facilities at your facility.',
+    sw: 'Akaunti za wafanyakazi na vituo kwa kituo chako.',
   },
   reports_title: { en: 'Reports', sw: 'Ripoti' },
   reports_subtitle: {
@@ -374,6 +375,7 @@ const DICTIONARY = {
 
   st_col_phone: { en: 'Phone', sw: 'Simu' },
   st_col_facility: { en: 'Facility', sw: 'Kituo' },
+  st_col_last_login: { en: 'Last login', sw: 'Kuingia mara ya mwisho' },
   st_col_employee_number: { en: 'Employee No.', sw: 'Namba ya Mtumishi' },
   st_phone_placeholder: { en: 'Phone number', sw: 'Nambari ya simu' },
   st_employee_number_placeholder: { en: 'Government employee number', sw: 'Namba ya mtumishi wa serikali' },

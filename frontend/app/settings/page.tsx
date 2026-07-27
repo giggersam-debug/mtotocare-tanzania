@@ -9,6 +9,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { t } = useLanguage();
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
@@ -18,25 +19,26 @@ export default function SettingsPage() {
       return;
     }
     const raw = window.localStorage.getItem('mtotocare_user');
-    const role = raw ? JSON.parse(raw).role : null;
-    if (role !== 'administrator') {
+    const userRole = raw ? JSON.parse(raw).role : null;
+    if (!['administrator', 'nurse', 'doctor'].includes(userRole)) {
       router.replace('/dashboard');
       return;
     }
+    setRole(userRole);
     setAllowed(true);
     setAccessToken(token);
   }, [router]);
 
-  if (!allowed || !accessToken) return null;
+  if (!allowed || !accessToken || !role) return null;
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-12">
       <div className="mx-auto mb-8 max-w-lg text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-blue">Administration</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-blue">{t('settings_eyebrow')}</p>
         <h1 className="mt-2 text-2xl font-bold text-slate-900">{t('settings_title')}</h1>
         <p className="mt-1 text-sm text-slate-500">{t('settings_subtitle')}</p>
       </div>
-      <SettingsPanel accessToken={accessToken} />
+      <SettingsPanel accessToken={accessToken} role={role} />
     </main>
   );
 }

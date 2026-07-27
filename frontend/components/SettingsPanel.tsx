@@ -17,16 +17,24 @@ import { useLanguage } from '@/lib/i18n';
 const STAFF_ROLES: CreateStaffPayload['role'][] = ['nurse', 'doctor', 'nutritionist', 'pharmacist'];
 const FACILITY_LEVELS: Facility['level'][] = ['dispensary', 'health_centre', 'hospital'];
 
-export function SettingsPanel({ accessToken }: { accessToken: string }) {
+function formatLastLogin(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+export function SettingsPanel({ accessToken, role }: { accessToken: string; role: string }) {
+  const canManage = role === 'administrator';
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
-      <StaffSection accessToken={accessToken} />
-      <FacilitiesSection accessToken={accessToken} />
+      <StaffSection accessToken={accessToken} canManage={canManage} />
+      <FacilitiesSection accessToken={accessToken} canManage={canManage} />
     </div>
   );
 }
 
-function StaffSection({ accessToken }: { accessToken: string }) {
+function StaffSection({ accessToken, canManage }: { accessToken: string; canManage: boolean }) {
   const { t } = useLanguage();
   const [staff, setStaff] = useState<StaffSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,12 +90,14 @@ function StaffSection({ accessToken }: { accessToken: string }) {
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-bold text-slate-900">{t('st_staff_accounts')}</h2>
-        <button onClick={() => setShowForm((v) => !v)} className="btn-secondary w-auto px-4 py-1.5 text-xs">
-          {showForm ? t('st_cancel') : t('st_add_staff')}
-        </button>
+        {canManage && (
+          <button onClick={() => setShowForm((v) => !v)} className="btn-secondary w-auto px-4 py-1.5 text-xs">
+            {showForm ? t('st_cancel') : t('st_add_staff')}
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {canManage && showForm && (
         <form onSubmit={handleCreate} className="mb-5 space-y-3 rounded-xl bg-slate-50 p-4">
           <div className="grid grid-cols-2 gap-3">
             <input
@@ -159,7 +169,8 @@ function StaffSection({ accessToken }: { accessToken: string }) {
               <th className="py-2">{t('st_col_role')}</th>
               <th className="py-2">{t('st_col_facility')}</th>
               <th className="py-2">{t('st_col_status')}</th>
-              <th className="py-2" />
+              <th className="py-2">{t('st_col_last_login')}</th>
+              {canManage && <th className="py-2" />}
             </tr>
           </thead>
           <tbody>
@@ -180,14 +191,17 @@ function StaffSection({ accessToken }: { accessToken: string }) {
                     {member.isActive ? t('st_active') : t('st_deactivated')}
                   </span>
                 </td>
-                <td className="py-2 text-right">
-                  <button
-                    onClick={() => handleToggleActive(member)}
-                    className="text-xs font-semibold text-blue hover:underline"
-                  >
-                    {member.isActive ? t('st_deactivate') : t('st_reactivate')}
-                  </button>
-                </td>
+                <td className="py-2 text-xs text-slate-500">{formatLastLogin(member.lastLoginAt)}</td>
+                {canManage && (
+                  <td className="py-2 text-right">
+                    <button
+                      onClick={() => handleToggleActive(member)}
+                      className="text-xs font-semibold text-blue hover:underline"
+                    >
+                      {member.isActive ? t('st_deactivate') : t('st_reactivate')}
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -197,7 +211,7 @@ function StaffSection({ accessToken }: { accessToken: string }) {
   );
 }
 
-function FacilitiesSection({ accessToken }: { accessToken: string }) {
+function FacilitiesSection({ accessToken, canManage }: { accessToken: string; canManage: boolean }) {
   const { t } = useLanguage();
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,12 +257,14 @@ function FacilitiesSection({ accessToken }: { accessToken: string }) {
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-bold text-slate-900">{t('st_facilities')}</h2>
-        <button onClick={() => setShowForm((v) => !v)} className="btn-secondary w-auto px-4 py-1.5 text-xs">
-          {showForm ? t('st_cancel') : t('st_add_facility')}
-        </button>
+        {canManage && (
+          <button onClick={() => setShowForm((v) => !v)} className="btn-secondary w-auto px-4 py-1.5 text-xs">
+            {showForm ? t('st_cancel') : t('st_add_facility')}
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {canManage && showForm && (
         <form onSubmit={handleCreate} className="mb-5 space-y-3 rounded-xl bg-slate-50 p-4">
           <div className="grid grid-cols-2 gap-3">
             <input

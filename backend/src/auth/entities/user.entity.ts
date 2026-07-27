@@ -33,6 +33,11 @@ export class User {
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
+  // Set on every successful login — surfaced in Settings so admins/nurses
+  // can see who's actively signing in.
+  @Column({ name: 'last_login_at', type: 'timestamptz', nullable: true })
+  lastLoginAt?: Date;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

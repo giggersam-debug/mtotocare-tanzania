@@ -19,9 +19,12 @@ export class AuthController {
     return this.auth.login(dto.username, dto.password);
   }
 
+  // View-only for nurses/doctors — lets them see who's on staff and who's
+  // been logging in without granting the ability to create or deactivate
+  // accounts, which stays administrator-only below.
   @Get('staff')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('administrator')
+  @Roles('administrator', 'nurse', 'doctor')
   listStaff(@CurrentUser() user: AuthenticatedUser) {
     return this.auth.listStaff(user);
   }

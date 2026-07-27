@@ -55,7 +55,7 @@ export function Nav() {
     { href: '/calendar', key: 'nav_calendar' },
     { href: '/reports', key: 'nav_reports' },
   ];
-  if (role === 'administrator') {
+  if (role === 'administrator' || role === 'nurse' || role === 'doctor') {
     links.push({ href: '/settings', key: 'nav_settings' });
   }
 

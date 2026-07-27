@@ -527,6 +527,7 @@ export interface StaffSummary {
   employeeNumber?: string | null;
   facilityName?: string | null;
   isActive: boolean;
+  lastLoginAt?: string | null;
   createdAt: string;
 }
 
