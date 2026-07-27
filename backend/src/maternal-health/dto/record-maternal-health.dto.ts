@@ -31,6 +31,7 @@ export class RecordMaternalHealthDto {
 
   @IsOptional() @IsString() @Length(0, 2000) deliveryComplications?: string;
   @IsOptional() @IsString() @Length(0, 2000) geneticFamilyHistory?: string;
+  @IsOptional() @IsString() @Length(0, 4000) clinicalNotes?: string;
 
   // Consent must be explicitly true to record this data at all — enforced
   // again in the service as a hard gate, not just client-side validation.

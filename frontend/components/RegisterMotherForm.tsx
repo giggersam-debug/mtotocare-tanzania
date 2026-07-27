@@ -33,6 +33,7 @@ const initialState = {
   hivStatus: 'unknown' as HivStatus,
   artAdherence: '' as ArtAdherence | '',
   geneticFamilyHistory: '',
+  clinicalNotes: '',
   maternalConsent: false,
 };
 
@@ -94,6 +95,7 @@ export function RegisterMotherForm({ accessToken }: { accessToken: string }) {
             hivStatus: form.hivStatus,
             artAdherence: form.artAdherence || undefined,
             geneticFamilyHistory: form.geneticFamilyHistory || undefined,
+            clinicalNotes: form.clinicalNotes || undefined,
             consentGiven: form.maternalConsent,
           },
           accessToken,
@@ -312,6 +314,16 @@ export function RegisterMotherForm({ accessToken }: { accessToken: string }) {
               rows={2}
               value={form.geneticFamilyHistory}
               onChange={(e) => update('geneticFamilyHistory', e.target.value)}
+            />
+          </Field>
+
+          <Field label={t('reg_clinical_notes')}>
+            <textarea
+              className="input"
+              rows={2}
+              placeholder={t('reg_clinical_notes_placeholder')}
+              value={form.clinicalNotes}
+              onChange={(e) => update('clinicalNotes', e.target.value)}
             />
           </Field>
 

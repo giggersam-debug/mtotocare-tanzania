@@ -4,6 +4,7 @@ import { RecordMaternalHealthDto } from './dto/record-maternal-health.dto';
 import { RecordMaternalHealthForGuardianDto } from './dto/record-maternal-health-for-guardian.dto';
 import { AttachMaternalHealthDto } from './dto/attach-maternal-health.dto';
 import { UpdateMaternalHealthDto } from './dto/update-maternal-health.dto';
+import { RecordAntenatalVisitDto } from './dto/record-antenatal-visit.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -45,6 +46,16 @@ export class MaternalHealthController {
     return this.maternalHealthService.forChild(childId);
   }
 
+  // Pre-birth "previous clinic" lookup — used during a new child's
+  // registration when the mother is found via phone search, so the nurse
+  // can see her prior ANC visits and next-visit-due date before the baby
+  // even exists in the system.
+  @Get('guardian/:guardianId')
+  @Roles('nurse', 'doctor', 'nutritionist', 'administrator', 'ministry')
+  forGuardian(@Param('guardianId') guardianId: string) {
+    return this.maternalHealthService.forGuardian(guardianId);
+  }
+
   @Patch(':maternalHealthRecordId')
   @Roles('nurse', 'doctor')
   update(
@@ -52,5 +63,21 @@ export class MaternalHealthController {
     @Body() dto: UpdateMaternalHealthDto,
   ) {
     return this.maternalHealthService.update(maternalHealthRecordId, dto);
+  }
+
+  @Post(':maternalHealthRecordId/visits')
+  @Roles('nurse', 'doctor')
+  recordVisit(
+    @Param('maternalHealthRecordId') maternalHealthRecordId: string,
+    @Body() dto: RecordAntenatalVisitDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.maternalHealthService.recordVisit(maternalHealthRecordId, dto, user);
+  }
+
+  @Get(':maternalHealthRecordId/visits')
+  @Roles('nurse', 'doctor', 'nutritionist', 'administrator', 'ministry')
+  visits(@Param('maternalHealthRecordId') maternalHealthRecordId: string) {
+    return this.maternalHealthService.visitsForRecord(maternalHealthRecordId);
   }
 }

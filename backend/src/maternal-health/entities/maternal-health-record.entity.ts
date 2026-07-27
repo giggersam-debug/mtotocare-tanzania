@@ -67,6 +67,12 @@ export class MaternalHealthRecord {
   @Column({ name: 'genetic_family_history', type: 'text', nullable: true })
   geneticFamilyHistory?: string;
 
+  // General free-text notes for anything outside the structured fields above
+  // — e.g. lab/test orders a doctor requests that fall outside the standard
+  // ANC checklist. Shared across the pregnancy, not tied to a single visit.
+  @Column({ name: 'clinical_notes', type: 'text', nullable: true })
+  clinicalNotes?: string;
+
   @Column({ name: 'consent_given', default: false })
   consentGiven: boolean;
 

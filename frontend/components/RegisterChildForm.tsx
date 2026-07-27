@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   attachMaternalHealth,
+  getMaternalHealthForGuardian,
   listFacilities,
   recordMaternalHealth,
   registerChild,
@@ -12,6 +13,7 @@ import {
   type Facility,
   type GuardianSearchResult,
   type HivStatus,
+  type MaternalHealthRecord,
   type RegisterChildResponse,
 } from '@/lib/api';
 import { PassportCard } from './PassportCard';
@@ -61,6 +63,7 @@ const initialState = {
   apgarScore: '',
   deliveryComplications: '',
   geneticFamilyHistory: '',
+  clinicalNotes: '',
   maternalConsent: false,
 };
 
@@ -76,6 +79,7 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
     'idle',
   );
   const [foundGuardian, setFoundGuardian] = useState<GuardianSearchResult | null>(null);
+  const [previousMaternal, setPreviousMaternal] = useState<MaternalHealthRecord | null>(null);
 
   useEffect(() => {
     listFacilities(accessToken)
@@ -126,6 +130,13 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
       update('guardianFullName', result.fullName);
       update('guardianRelation', result.relation);
       update('whatsappOptIn', result.whatsappOptIn);
+      // Pull up her prior ANC history so the nurse can see where she's been
+      // seen before and when she's due back, before the baby even exists.
+      if (result.hasPendingMaternalRecord) {
+        getMaternalHealthForGuardian(result.guardianId, accessToken)
+          .then(setPreviousMaternal)
+          .catch(() => setPreviousMaternal(null));
+      }
     } else {
       setFoundGuardian(null);
       setGuardianSearchStatus('not_found');
@@ -135,6 +146,7 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
   function resetGuardianSearch() {
     setGuardianSearchStatus('idle');
     setFoundGuardian(null);
+    setPreviousMaternal(null);
     update('guardianFullName', '');
     update('guardianRelation', 'mother');
   }
@@ -220,6 +232,7 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
               apgarScore: form.apgarScore ? Number(form.apgarScore) : undefined,
               deliveryComplications: form.deliveryComplications || undefined,
               geneticFamilyHistory: form.geneticFamilyHistory || undefined,
+              clinicalNotes: form.clinicalNotes || undefined,
               consentGiven: form.maternalConsent,
             },
             accessToken,
@@ -314,6 +327,32 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
               </p>
               {foundGuardian.hasPendingMaternalRecord && (
                 <p className="text-xs text-slate-600">{t('cr_has_pending_maternal')}</p>
+              )}
+              {previousMaternal && (
+                <div className="mt-2 space-y-1 rounded-lg bg-white/70 p-3 text-xs text-slate-600">
+                  <p className="font-bold uppercase tracking-wide text-green">{t('cr_previous_clinic_title')}</p>
+                  {previousMaternal.nextVisitDue && (
+                    <p className="font-semibold text-blue">
+                      {t('cp_next_visit_due')}: {previousMaternal.nextVisitDue}
+                    </p>
+                  )}
+                  {(previousMaternal.visits?.length ?? 0) > 0 && (
+                    <p>
+                      {t('cr_last_visit')}: {previousMaternal.visits![0].visitDate}
+                      {previousMaternal.visits![0].facilityName ? ` · ${previousMaternal.visits![0].facilityName}` : ''}
+                    </p>
+                  )}
+                  {previousMaternal.ancVisits != null && (
+                    <p>
+                      {t('reg_anc_visits')}: {previousMaternal.ancVisits}
+                    </p>
+                  )}
+                  {previousMaternal.facilityName && !previousMaternal.visits?.length && (
+                    <p>
+                      {t('cr_last_visit')}: {previousMaternal.facilityName}
+                    </p>
+                  )}
+                </div>
               )}
               <button type="button" onClick={resetGuardianSearch} className="text-xs font-semibold text-blue underline">
                 {t('cr_search_different')}
@@ -628,6 +667,16 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
               rows={2}
               value={form.geneticFamilyHistory}
               onChange={(e) => update('geneticFamilyHistory', e.target.value)}
+            />
+          </Field>
+
+          <Field label={t('reg_clinical_notes')}>
+            <textarea
+              className="input"
+              rows={2}
+              placeholder={t('reg_clinical_notes_placeholder')}
+              value={form.clinicalNotes}
+              onChange={(e) => update('clinicalNotes', e.target.value)}
             />
           </Field>
 

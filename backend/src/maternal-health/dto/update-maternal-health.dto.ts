@@ -28,6 +28,7 @@ export class UpdateMaternalHealthDto {
 
   @IsOptional() @IsString() @Length(0, 2000) deliveryComplications?: string;
   @IsOptional() @IsString() @Length(0, 2000) geneticFamilyHistory?: string;
+  @IsOptional() @IsString() @Length(0, 4000) clinicalNotes?: string;
 
   @IsOptional() @IsBoolean() consentGiven?: boolean;
 }

@@ -673,7 +673,17 @@ export interface RecordMaternalHealthPayload {
   apgarScore?: number;
   deliveryComplications?: string;
   geneticFamilyHistory?: string;
+  clinicalNotes?: string;
   consentGiven: boolean;
+}
+
+export interface AntenatalVisit {
+  antenatalVisitId: string;
+  visitDate: string;
+  nextVisitDate?: string | null;
+  notes?: string | null;
+  recordedByName?: string | null;
+  facilityName?: string | null;
 }
 
 export interface MaternalHealthRecord {
@@ -693,9 +703,12 @@ export interface MaternalHealthRecord {
   apgarScore?: number | null;
   deliveryComplications?: string | null;
   geneticFamilyHistory?: string | null;
+  clinicalNotes?: string | null;
   consentGiven: boolean;
   recordedByName?: string | null;
   facilityName?: string | null;
+  visits?: AntenatalVisit[];
+  nextVisitDue?: string | null;
   createdAt: string;
 }
 
@@ -794,6 +807,7 @@ export interface RecordMaternalHealthForGuardianPayload {
   hivStatus?: HivStatus;
   artAdherence?: ArtAdherence;
   geneticFamilyHistory?: string;
+  clinicalNotes?: string;
   consentGiven: boolean;
 }
 
@@ -826,4 +840,57 @@ export async function attachMaternalHealth(
     // Best-effort — if this fails the child record still exists, it just
     // won't show the pre-birth pregnancy history.
   });
+}
+
+// Pre-birth "previous clinic" lookup — used during a new child's
+// registration when the mother is found via phone search, so her prior ANC
+// visit history and next-visit-due date can be shown before the baby even
+// exists in the system.
+export async function getMaternalHealthForGuardian(
+  guardianId: string,
+  accessToken: string,
+): Promise<MaternalHealthRecord | null> {
+  const res = await fetch(`${API_BASE_URL}/maternal-health/guardian/${guardianId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export interface RecordAntenatalVisitPayload {
+  visitDate: string;
+  nextVisitDate?: string;
+  facilityId?: string;
+  notes?: string;
+}
+
+export async function recordAntenatalVisit(
+  maternalHealthRecordId: string,
+  payload: RecordAntenatalVisitPayload,
+  accessToken: string,
+): Promise<AntenatalVisit> {
+  const res = await fetch(`${API_BASE_URL}/maternal-health/${maternalHealthRecordId}/visits`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not record the antenatal visit.');
+  }
+  return res.json();
+}
+
+export async function getAntenatalVisits(
+  maternalHealthRecordId: string,
+  accessToken: string,
+): Promise<AntenatalVisit[]> {
+  const res = await fetch(`${API_BASE_URL}/maternal-health/${maternalHealthRecordId}/visits`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not load the antenatal visit history.');
+  }
+  return res.json();
 }
