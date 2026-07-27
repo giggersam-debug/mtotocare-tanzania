@@ -3,7 +3,7 @@
 // touches page navigations or API requests — this is a health-record app,
 // and showing a nurse or parent stale cached data instead of a real network
 // response would be worse than no offline support at all.
-const CACHE_NAME = 'mtotocare-static-v1';
+const CACHE_NAME = 'mtotocare-static-v2';
 const STATIC_ASSET_PATTERNS = [/^\/_next\/static\//, /^\/icon-/, /^\/apple-touch-icon/, /^\/manifest\.json$/];
 
 self.addEventListener('install', () => {
