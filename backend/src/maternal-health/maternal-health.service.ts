@@ -135,7 +135,7 @@ export class MaternalHealthService {
   async forGuardian(guardianId: string) {
     const record = await this.records.findOne({
       where: { guardian: { guardianId } },
-      relations: ['facility'],
+      relations: ['facility', 'guardian', 'child'],
       order: { createdAt: 'DESC' },
     });
     if (!record || !record.consentGiven) return null;
@@ -157,9 +157,85 @@ export class MaternalHealthService {
       ...record,
       recordedByName: recorder?.fullName ?? null,
       facilityName: record.facility?.name ?? null,
+      guardianFullName: record.guardian?.fullName ?? null,
+      guardianPhone: record.guardian?.phone ?? null,
+      guardianRelation: record.guardian?.relation ?? null,
+      guardianOccupation: record.guardian?.occupation ?? null,
+      guardianResidence: record.guardian?.residence ?? null,
+      childId: record.child?.childId ?? null,
+      childFullName: record.child?.fullName ?? null,
       visits,
       nextVisitDue,
     };
+  }
+
+  /**
+   * Mothers Dashboard: every mother with a maternal health record at the
+   * nurse's own facility — pregnant (pre-birth) and already-delivered alike
+   * — one row per mother (her most recent pregnancy), most urgent first.
+   */
+  async mothersList(user: AuthenticatedUser) {
+    if (!user.facilityId) {
+      throw new ForbiddenException('Your account is not linked to a facility');
+    }
+
+    const records = await this.records.find({
+      where: { facility: { facilityId: user.facilityId }, consentGiven: true },
+      relations: ['guardian', 'child'],
+      order: { createdAt: 'DESC' },
+    });
+
+    // A mother can have more than one pregnancy on file — keep only the
+    // most recent per guardian for the dashboard row.
+    const latestByGuardian = new Map<string, MaternalHealthRecord>();
+    for (const r of records) {
+      const guardianId = r.guardian.guardianId;
+      const existing = latestByGuardian.get(guardianId);
+      if (!existing || r.createdAt > existing.createdAt) latestByGuardian.set(guardianId, r);
+    }
+
+    const mothers = await Promise.all(
+      [...latestByGuardian.values()].map(async (record) => {
+        const visits = await this.visitsForRecord(record.maternalHealthRecordId);
+        const nextVisitDue = visits.find((v) => v.nextVisitDate)?.nextVisitDate ?? null;
+        const lastVisit = visits[0]?.visitDate ?? null;
+
+        return {
+          guardianId: record.guardian.guardianId,
+          guardianFullName: record.guardian.fullName,
+          guardianPhone: record.guardian.phone,
+          maternalHealthRecordId: record.maternalHealthRecordId,
+          status: record.child ? ('delivered' as const) : ('pregnant' as const),
+          childId: record.child?.childId ?? null,
+          childFullName: record.child?.fullName ?? null,
+          gravida: record.gravida ?? null,
+          para: record.para ?? null,
+          estimatedDueDate: record.estimatedDueDate ?? null,
+          ancVisits: record.ancVisits ?? null,
+          gestationalDiabetes: record.gestationalDiabetes,
+          hypertension: record.hypertension,
+          anemia: record.anemia,
+          malariaInPregnancy: record.malariaInPregnancy,
+          hivStatus: record.hivStatus,
+          hasGeneticFamilyHistory: Boolean(record.geneticFamilyHistory),
+          lastVisit,
+          nextVisitDue,
+          visitCount: visits.length,
+          createdAt: record.createdAt,
+        };
+      }),
+    );
+
+    // Mothers due for a visit soonest come first; the rest fall back to
+    // most-recently-active.
+    return mothers.sort((a, b) => {
+      if (a.nextVisitDue && b.nextVisitDue) return a.nextVisitDue < b.nextVisitDue ? -1 : 1;
+      if (a.nextVisitDue) return -1;
+      if (b.nextVisitDue) return 1;
+      const aDate = a.lastVisit ?? a.createdAt.toString();
+      const bDate = b.lastVisit ?? b.createdAt.toString();
+      return aDate < bDate ? 1 : -1;
+    });
   }
 
   /**

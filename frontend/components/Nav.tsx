@@ -47,6 +47,7 @@ export function Nav() {
     { href: '/register-mother', key: 'nav_register_mother' },
     { href: '/register', key: 'nav_registration' },
     { href: '/children', key: 'nav_child_lookup' },
+    { href: '/mothers', key: 'nav_mothers' },
     { href: '/scan', key: 'nav_vaccinations' },
     { href: '/parent', key: 'nav_parent_portal' },
     { href: '/health-worker', key: 'nav_health_worker' },

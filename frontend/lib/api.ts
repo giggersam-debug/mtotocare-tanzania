@@ -707,9 +707,53 @@ export interface MaternalHealthRecord {
   consentGiven: boolean;
   recordedByName?: string | null;
   facilityName?: string | null;
+  guardianFullName?: string | null;
+  guardianPhone?: string | null;
+  guardianRelation?: string | null;
+  guardianOccupation?: string | null;
+  guardianResidence?: string | null;
+  childId?: string | null;
+  childFullName?: string | null;
   visits?: AntenatalVisit[];
   nextVisitDue?: string | null;
   createdAt: string;
+}
+
+export interface MotherSummary {
+  guardianId: string;
+  guardianFullName: string;
+  guardianPhone: string;
+  maternalHealthRecordId: string;
+  status: 'pregnant' | 'delivered';
+  childId: string | null;
+  childFullName: string | null;
+  gravida: number | null;
+  para: number | null;
+  estimatedDueDate: string | null;
+  ancVisits: number | null;
+  gestationalDiabetes: boolean;
+  hypertension: boolean;
+  anemia: boolean;
+  malariaInPregnancy: boolean;
+  hivStatus: HivStatus;
+  hasGeneticFamilyHistory: boolean;
+  lastVisit: string | null;
+  nextVisitDue: string | null;
+  visitCount: number;
+  createdAt: string;
+}
+
+// Mothers Dashboard — every mother with a maternal health record at the
+// signed-in nurse's facility, so she can be tracked visit-to-visit.
+export async function getMothersList(accessToken: string): Promise<MotherSummary[]> {
+  const res = await fetch(`${API_BASE_URL}/maternal-health/mothers`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? 'Could not load the mothers dashboard.');
+  }
+  return res.json();
 }
 
 export async function recordMaternalHealth(

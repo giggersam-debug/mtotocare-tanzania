@@ -40,6 +40,15 @@ export class MaternalHealthController {
     return this.maternalHealthService.attachToChild(dto.guardianId, dto.childId);
   }
 
+  // Mothers Dashboard — every mother with a maternal health record at the
+  // nurse's own facility, pregnant and delivered alike, so she can be
+  // tracked visit-to-visit rather than only surfacing during registration.
+  @Get('mothers')
+  @Roles('nurse', 'doctor', 'nutritionist', 'administrator', 'ministry')
+  mothers(@CurrentUser() user: AuthenticatedUser) {
+    return this.maternalHealthService.mothersList(user);
+  }
+
   @Get('child/:childId')
   @Roles('nurse', 'doctor', 'nutritionist', 'administrator', 'ministry')
   forChild(@Param('childId') childId: string) {
