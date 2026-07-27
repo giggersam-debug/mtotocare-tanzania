@@ -678,9 +678,25 @@ export interface RecordMaternalHealthPayload {
   consentGiven: boolean;
 }
 
+export type UrineTestResult = 'negative' | 'trace' | 'positive';
+
 export interface AntenatalVisit {
   antenatalVisitId: string;
   visitDate: string;
+  gestationalAgeWeeks?: number | null;
+  weightKg?: number | null;
+  bpSystolic?: number | null;
+  bpDiastolic?: number | null;
+  fundalHeightCm?: number | null;
+  fetalHeartbeatPresent?: boolean | null;
+  dangerSigns?: string | null;
+  urineProtein?: UrineTestResult | null;
+  urineGlucose?: UrineTestResult | null;
+  hemoglobinGdl?: number | null;
+  ironFolicAcidGiven: boolean;
+  iptpSpDoseGiven?: number | null;
+  dewormingGiven: boolean;
+  investigationsOrdered?: string | null;
   nextVisitDate?: string | null;
   notes?: string | null;
   recordedByName?: string | null;
@@ -920,6 +936,20 @@ export async function getMaternalHealthForGuardian(
 
 export interface RecordAntenatalVisitPayload {
   visitDate: string;
+  gestationalAgeWeeks?: number;
+  weightKg?: number;
+  bpSystolic?: number;
+  bpDiastolic?: number;
+  fundalHeightCm?: number;
+  fetalHeartbeatPresent?: boolean;
+  dangerSigns?: string;
+  urineProtein?: UrineTestResult;
+  urineGlucose?: UrineTestResult;
+  hemoglobinGdl?: number;
+  ironFolicAcidGiven?: boolean;
+  iptpSpDoseGiven?: number;
+  dewormingGiven?: boolean;
+  investigationsOrdered?: string;
   nextVisitDate?: string;
   facilityId?: string;
   notes?: string;
