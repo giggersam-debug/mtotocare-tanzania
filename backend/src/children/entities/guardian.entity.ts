@@ -21,6 +21,12 @@ export class Guardian {
   @Column({ name: 'national_id_ref', length: 30, nullable: true })
   nationalIdRef?: string;
 
+  @Column({ length: 100, nullable: true })
+  occupation?: string;
+
+  @Column({ length: 200, nullable: true })
+  residence?: string;
+
   @OneToMany(() => Child, (child) => child.guardian)
   children: Child[];
 

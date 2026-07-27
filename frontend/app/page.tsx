@@ -103,7 +103,7 @@ export default function HomePage() {
                 >
                   <div>
                     <p className="font-semibold text-slate-700">{f.name}</p>
-                    <p className="text-xs text-slate-500">{f.region}</p>
+                    <p className="text-xs text-slate-500">{f.district ? `${f.district}, ${f.region}` : f.region}</p>
                   </div>
                   <span className="rounded-full bg-green/10 px-2.5 py-1 text-xs font-semibold text-green">
                     {t(LEVEL_KEY[f.level])}

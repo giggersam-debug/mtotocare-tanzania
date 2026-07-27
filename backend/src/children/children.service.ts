@@ -39,6 +39,8 @@ export class ChildrenService {
           phone: dto.guardian.phone,
           whatsappOptIn: dto.guardian.whatsappOptIn ?? false,
           nationalIdRef: dto.guardian.nationalIdRef,
+          occupation: dto.guardian.occupation,
+          residence: dto.guardian.residence,
         });
         guardian = await guardianRepo.save(guardian);
       }
@@ -53,6 +55,8 @@ export class ChildrenService {
             phone: dto.secondGuardian.phone,
             whatsappOptIn: dto.secondGuardian.whatsappOptIn ?? false,
             nationalIdRef: dto.secondGuardian.nationalIdRef,
+            occupation: dto.secondGuardian.occupation,
+            residence: dto.secondGuardian.residence,
           });
           secondGuardian = await guardianRepo.save(secondGuardian);
         }

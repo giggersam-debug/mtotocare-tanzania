@@ -15,12 +15,18 @@ export interface RegisterChildPayload {
     relation: 'mother' | 'father' | 'guardian';
     phone: string;
     whatsappOptIn?: boolean;
+    nationalIdRef?: string;
+    occupation?: string;
+    residence?: string;
   };
   secondGuardian?: {
     fullName: string;
     relation: 'mother' | 'father' | 'guardian';
     phone: string;
     whatsappOptIn?: boolean;
+    nationalIdRef?: string;
+    occupation?: string;
+    residence?: string;
   };
 }
 
@@ -456,6 +462,7 @@ export interface Facility {
   name: string;
   level: 'dispensary' | 'health_centre' | 'hospital';
   region: string;
+  district?: string;
   mohCode: string;
 }
 
@@ -463,6 +470,7 @@ export interface CreateFacilityPayload {
   name: string;
   level: 'dispensary' | 'health_centre' | 'hospital';
   region: string;
+  district?: string;
   mohCode: string;
 }
 
@@ -495,6 +503,7 @@ export interface PublicFacility {
   name: string;
   level: 'dispensary' | 'health_centre' | 'hospital';
   region: string;
+  district?: string;
 }
 
 // Unauthenticated — used on the public home page.
@@ -723,6 +732,8 @@ export interface RegisterGuardianPayload {
   phone: string;
   whatsappOptIn?: boolean;
   nationalIdRef?: string;
+  occupation: string;
+  residence: string;
 }
 
 export interface GuardianRecord {
@@ -731,6 +742,9 @@ export interface GuardianRecord {
   relation: 'mother' | 'father' | 'guardian';
   phone: string;
   whatsappOptIn: boolean;
+  nationalIdRef?: string;
+  occupation?: string;
+  residence?: string;
 }
 
 export interface GuardianSearchResult extends GuardianRecord {

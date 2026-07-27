@@ -14,6 +14,9 @@ export class Facility {
   @Column({ length: 80 })
   region: string;
 
+  @Column({ length: 80, nullable: true })
+  district?: string;
+
   @Column({ name: 'moh_code', length: 30, unique: true })
   mohCode: string;
 }

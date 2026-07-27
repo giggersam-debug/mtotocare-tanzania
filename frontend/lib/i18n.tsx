@@ -288,6 +288,11 @@ const DICTIONARY = {
   reg_guardian_details: { en: 'Mother & Guardian Details', sw: 'Maelezo ya Mama na Mlezi' },
   reg_birth_facility: { en: 'Birth facility', sw: 'Kituo cha kuzalia' },
   reg_birth_facility_placeholder: { en: 'Select the hospital/facility', sw: 'Chagua hospitali/kituo' },
+  reg_region_placeholder: { en: 'Select region', sw: 'Chagua mkoa' },
+  reg_district_placeholder: { en: 'Select district', sw: 'Chagua wilaya' },
+  reg_district_placeholder_all: { en: 'All districts', sw: 'Wilaya zote' },
+  reg_occupation: { en: 'Occupation / nature of work', sw: 'Kazi/aina ya ajira' },
+  reg_residence: { en: 'Place of residence', sw: 'Mahali anapoishi' },
 
   nav_register_mother: { en: 'Register Mother', sw: 'Sajili Mama' },
   rm_eyebrow: { en: 'PRE-BIRTH REGISTRATION', sw: 'USAJILI KABLA YA KUJIFUNGUA' },
@@ -296,7 +301,7 @@ const DICTIONARY = {
     en: 'Register a mother during an antenatal visit, before her baby is born. Search her by phone later when registering the child.',
     sw: 'Sajili mama wakati wa ziara ya kliniki ya wajawazito, kabla ya mtoto kuzaliwa. Mtafute kwa nambari yake ya simu baadaye wakati wa kusajili mtoto.',
   },
-  rm_national_id: { en: 'National ID (optional)', sw: 'Kitambulisho cha Taifa (si lazima)' },
+  rm_national_id: { en: 'National ID', sw: 'Kitambulisho cha Taifa' },
   rm_register_btn: { en: 'Register mother', sw: 'Sajili mama' },
   rm_registering: { en: 'Registering…', sw: 'Inasajili…' },
   rm_already_registered: {

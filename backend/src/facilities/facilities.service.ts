@@ -16,7 +16,13 @@ export class FacilitiesService {
   /** Trimmed, unauthenticated view for the public home page — no MOH code. */
   async listPublic() {
     const facilities = await this.facilities.find({ order: { name: 'ASC' } });
-    return facilities.map(({ facilityId, name, level, region }) => ({ facilityId, name, level, region }));
+    return facilities.map(({ facilityId, name, level, region, district }) => ({
+      facilityId,
+      name,
+      level,
+      region,
+      district,
+    }));
   }
 
   async create(dto: CreateFacilityDto) {
@@ -39,6 +45,7 @@ export class FacilitiesService {
     if (dto.name !== undefined) facility.name = dto.name;
     if (dto.level !== undefined) facility.level = dto.level;
     if (dto.region !== undefined) facility.region = dto.region;
+    if (dto.district !== undefined) facility.district = dto.district;
     if (dto.mohCode !== undefined) facility.mohCode = dto.mohCode;
 
     return this.facilities.save(facility);

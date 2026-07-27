@@ -18,6 +18,8 @@ const initialState = {
   phone: '',
   whatsappOptIn: true,
   nationalIdRef: '',
+  occupation: '',
+  residence: '',
   gravida: '',
   para: '',
   estimatedDueDate: '',
@@ -56,6 +58,8 @@ export function RegisterMotherForm({ accessToken }: { accessToken: string }) {
           phone: form.phone,
           whatsappOptIn: form.whatsappOptIn,
           nationalIdRef: form.nationalIdRef || undefined,
+          occupation: form.occupation,
+          residence: form.residence,
         },
         accessToken,
       );
@@ -160,13 +164,22 @@ export function RegisterMotherForm({ accessToken }: { accessToken: string }) {
             </Field>
           </div>
 
-          <Field label={t('rm_national_id')}>
+          <Field label={form.relation === 'guardian' ? t('rm_national_id') : `${t('rm_national_id')} *`}>
             <input
               className="input"
               value={form.nationalIdRef}
               onChange={(e) => update('nationalIdRef', e.target.value)}
             />
           </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label={`${t('reg_occupation')} *`}>
+              <input className="input" value={form.occupation} onChange={(e) => update('occupation', e.target.value)} />
+            </Field>
+            <Field label={`${t('reg_residence')} *`}>
+              <input className="input" value={form.residence} onChange={(e) => update('residence', e.target.value)} />
+            </Field>
+          </div>
 
           <label className="flex items-center gap-2 text-sm text-slate-600">
             <input
@@ -181,7 +194,14 @@ export function RegisterMotherForm({ accessToken }: { accessToken: string }) {
 
           <button
             onClick={handleRegisterGuardian}
-            disabled={submitting || !form.fullName || !form.phone}
+            disabled={
+              submitting ||
+              !form.fullName ||
+              !form.phone ||
+              !form.occupation ||
+              !form.residence ||
+              (form.relation !== 'guardian' && !form.nationalIdRef)
+            }
             className="btn-primary"
           >
             {submitting ? t('rm_registering') : t('rm_register_btn')}

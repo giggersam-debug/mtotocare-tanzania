@@ -28,10 +28,25 @@ class GuardianDto {
   @IsOptional()
   whatsappOptIn?: boolean;
 
-  @IsString()
+  // These three are only actually collected when this guardian is being
+  // newly created here (the frontend requires them on that branch of the
+  // form). When the phone number matches an existing guardian, the record
+  // on file is reused as-is and none of this is re-collected — so they stay
+  // optional at the DTO level rather than blocking that path.
   @IsOptional()
+  @IsString()
   @Length(4, 30)
   nationalIdRef?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(2, 100)
+  occupation?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(2, 200)
+  residence?: string;
 }
 
 export class CreateChildDto {

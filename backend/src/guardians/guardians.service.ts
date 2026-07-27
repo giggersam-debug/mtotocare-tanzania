@@ -23,6 +23,8 @@ export class GuardiansService {
         phone: dto.phone,
         whatsappOptIn: dto.whatsappOptIn ?? false,
         nationalIdRef: dto.nationalIdRef,
+        occupation: dto.occupation,
+        residence: dto.residence,
       });
       guardian = await this.guardians.save(guardian);
     }
@@ -44,6 +46,9 @@ export class GuardiansService {
       relation: guardian.relation,
       phone: guardian.phone,
       whatsappOptIn: guardian.whatsappOptIn,
+      nationalIdRef: guardian.nationalIdRef,
+      occupation: guardian.occupation,
+      residence: guardian.residence,
       childrenCount: guardian.children?.length ?? 0,
       hasPendingMaternalRecord: Boolean(pendingMaternalRecord),
     };

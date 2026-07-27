@@ -17,6 +17,11 @@ export class UpdateFacilityDto {
 
   @IsString()
   @IsOptional()
+  @Length(2, 80)
+  district?: string;
+
+  @IsString()
+  @IsOptional()
   @Length(2, 30)
   mohCode?: string;
 }

@@ -207,6 +207,7 @@ function FacilitiesSection({ accessToken }: { accessToken: string }) {
     name: '',
     level: 'dispensary',
     region: '',
+    district: '',
     mohCode: '',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -228,7 +229,7 @@ function FacilitiesSection({ accessToken }: { accessToken: string }) {
     setFormError(null);
     try {
       await createFacility(form, accessToken);
-      setForm({ name: '', level: 'dispensary', region: '', mohCode: '' });
+      setForm({ name: '', level: 'dispensary', region: '', district: '', mohCode: '' });
       setShowForm(false);
       reload();
     } catch (err) {
@@ -277,6 +278,12 @@ function FacilitiesSection({ accessToken }: { accessToken: string }) {
             />
             <input
               className="input"
+              placeholder={t('reg_district')}
+              value={form.district}
+              onChange={(e) => setForm({ ...form, district: e.target.value })}
+            />
+            <input
+              className="input"
               placeholder={t('st_moh_code')}
               value={form.mohCode}
               onChange={(e) => setForm({ ...form, mohCode: e.target.value })}
@@ -300,6 +307,7 @@ function FacilitiesSection({ accessToken }: { accessToken: string }) {
               <th className="py-2">{t('st_col_name')}</th>
               <th className="py-2">{t('st_col_level')}</th>
               <th className="py-2">{t('st_region')}</th>
+              <th className="py-2">{t('reg_district')}</th>
               <th className="py-2">{t('st_moh_code')}</th>
             </tr>
           </thead>
@@ -309,6 +317,7 @@ function FacilitiesSection({ accessToken }: { accessToken: string }) {
                 <td className="py-2 font-semibold text-slate-700">{f.name}</td>
                 <td className="py-2 text-slate-500">{f.level.replace('_', ' ')}</td>
                 <td className="py-2 text-slate-500">{f.region}</td>
+                <td className="py-2 text-slate-500">{f.district ?? '—'}</td>
                 <td className="py-2 font-mono text-xs text-slate-500">{f.mohCode}</td>
               </tr>
             ))}

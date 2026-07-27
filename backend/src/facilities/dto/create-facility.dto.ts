@@ -1,4 +1,4 @@
-import { IsIn, IsString, Length } from 'class-validator';
+import { IsIn, IsOptional, IsString, Length } from 'class-validator';
 
 export class CreateFacilityDto {
   @IsString()
@@ -11,6 +11,11 @@ export class CreateFacilityDto {
   @IsString()
   @Length(2, 80)
   region: string;
+
+  @IsString()
+  @IsOptional()
+  @Length(2, 80)
+  district?: string;
 
   @IsString()
   @Length(2, 30)

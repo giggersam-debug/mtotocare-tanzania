@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   attachMaternalHealth,
   listFacilities,
@@ -33,11 +33,17 @@ const initialState = {
   guardianFullName: '',
   guardianRelation: 'mother' as 'mother' | 'father' | 'guardian',
   guardianPhone: '',
+  guardianNationalId: '',
+  guardianOccupation: '',
+  guardianResidence: '',
   whatsappOptIn: true,
   addSecondParent: false,
   secondGuardianFullName: '',
   secondGuardianRelation: 'father' as 'mother' | 'father' | 'guardian',
   secondGuardianPhone: '',
+  secondGuardianNationalId: '',
+  secondGuardianOccupation: '',
+  secondGuardianResidence: '',
   secondGuardianWhatsappOptIn: false,
   gravida: '',
   para: '',
@@ -78,6 +84,35 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
 
   function update<K extends keyof typeof initialState>(key: K, value: (typeof initialState)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  // Facility picker linked to region -> district so the list narrows down
+  // instead of showing every hospital nationwide in one flat dropdown.
+  const regions = useMemo(
+    () => Array.from(new Set(facilities.map((f) => f.region))).sort((a, b) => a.localeCompare(b)),
+    [facilities],
+  );
+  const districtsForRegion = useMemo(
+    () =>
+      Array.from(
+        new Set(facilities.filter((f) => f.region === form.region && f.district).map((f) => f.district as string)),
+      ).sort((a, b) => a.localeCompare(b)),
+    [facilities, form.region],
+  );
+  const filteredFacilities = useMemo(
+    () =>
+      facilities.filter(
+        (f) => (!form.region || f.region === form.region) && (!form.district || f.district === form.district),
+      ),
+    [facilities, form.region, form.district],
+  );
+
+  function updateRegion(value: string) {
+    setForm((f) => ({ ...f, region: value, district: '', birthFacilityId: '' }));
+  }
+
+  function updateDistrict(value: string) {
+    setForm((f) => ({ ...f, district: value, birthFacilityId: '' }));
   }
 
   async function handleSearchGuardian() {
@@ -133,6 +168,11 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
             relation: form.guardianRelation,
             phone: form.guardianPhone,
             whatsappOptIn: form.whatsappOptIn,
+            // Only sent when this is a newly-entered guardian (not one found
+            // via phone search, whose details are already on file).
+            nationalIdRef: guardianSearchStatus === 'found' ? undefined : form.guardianNationalId || undefined,
+            occupation: guardianSearchStatus === 'found' ? undefined : form.guardianOccupation || undefined,
+            residence: guardianSearchStatus === 'found' ? undefined : form.guardianResidence || undefined,
           },
           secondGuardian:
             form.addSecondParent && form.secondGuardianFullName && form.secondGuardianPhone
@@ -141,6 +181,9 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
                   relation: form.secondGuardianRelation,
                   phone: form.secondGuardianPhone,
                   whatsappOptIn: form.secondGuardianWhatsappOptIn,
+                  nationalIdRef: form.secondGuardianNationalId || undefined,
+                  occupation: form.secondGuardianOccupation || undefined,
+                  residence: form.secondGuardianResidence || undefined,
                 }
               : undefined,
         },
@@ -301,6 +344,33 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
                 </select>
               </Field>
 
+              <Field
+                label={form.guardianRelation === 'guardian' ? t('rm_national_id') : `${t('rm_national_id')} *`}
+              >
+                <input
+                  className="input"
+                  value={form.guardianNationalId}
+                  onChange={(e) => update('guardianNationalId', e.target.value)}
+                />
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label={`${t('reg_occupation')} *`}>
+                  <input
+                    className="input"
+                    value={form.guardianOccupation}
+                    onChange={(e) => update('guardianOccupation', e.target.value)}
+                  />
+                </Field>
+                <Field label={`${t('reg_residence')} *`}>
+                  <input
+                    className="input"
+                    value={form.guardianResidence}
+                    onChange={(e) => update('guardianResidence', e.target.value)}
+                  />
+                </Field>
+              </div>
+
               <label className="flex items-center gap-2 text-sm text-slate-600">
                 <input
                   type="checkbox"
@@ -359,6 +429,35 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
                 </Field>
               </div>
 
+              <Field
+                label={
+                  form.secondGuardianRelation === 'guardian' ? t('rm_national_id') : `${t('rm_national_id')} *`
+                }
+              >
+                <input
+                  className="input"
+                  value={form.secondGuardianNationalId}
+                  onChange={(e) => update('secondGuardianNationalId', e.target.value)}
+                />
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label={`${t('reg_occupation')} *`}>
+                  <input
+                    className="input"
+                    value={form.secondGuardianOccupation}
+                    onChange={(e) => update('secondGuardianOccupation', e.target.value)}
+                  />
+                </Field>
+                <Field label={`${t('reg_residence')} *`}>
+                  <input
+                    className="input"
+                    value={form.secondGuardianResidence}
+                    onChange={(e) => update('secondGuardianResidence', e.target.value)}
+                  />
+                </Field>
+              </div>
+
               <label className="flex items-center gap-2 text-sm text-slate-600">
                 <input
                   type="checkbox"
@@ -379,7 +478,16 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
               guardianSearchStatus === 'searching' ||
               !form.guardianFullName ||
               !form.guardianPhone ||
-              (form.addSecondParent && (!form.secondGuardianFullName || !form.secondGuardianPhone))
+              (guardianSearchStatus === 'not_found' &&
+                (!form.guardianOccupation ||
+                  !form.guardianResidence ||
+                  (form.guardianRelation !== 'guardian' && !form.guardianNationalId))) ||
+              (form.addSecondParent &&
+                (!form.secondGuardianFullName ||
+                  !form.secondGuardianPhone ||
+                  !form.secondGuardianOccupation ||
+                  !form.secondGuardianResidence ||
+                  (form.secondGuardianRelation !== 'guardian' && !form.secondGuardianNationalId)))
             }
             className="btn-primary"
           >
@@ -568,29 +676,50 @@ export function RegisterChildForm({ accessToken }: { accessToken: string }) {
             <input className="input" value={form.birthWeightKg} onChange={(e) => update('birthWeightKg', e.target.value)} />
           </Field>
 
+          <div className="grid grid-cols-2 gap-4">
+            <Field label={t('reg_region')}>
+              <select className="input" value={form.region} onChange={(e) => updateRegion(e.target.value)}>
+                <option value="">{t('reg_region_placeholder')}</option>
+                {regions.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label={t('reg_district')}>
+              <select
+                className="input"
+                value={form.district}
+                disabled={!form.region || districtsForRegion.length === 0}
+                onChange={(e) => updateDistrict(e.target.value)}
+              >
+                <option value="">{t('reg_district_placeholder_all')}</option>
+                {districtsForRegion.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
           <Field label={t('reg_birth_facility')}>
             <select
               className="input"
               value={form.birthFacilityId}
+              disabled={!form.region}
               onChange={(e) => update('birthFacilityId', e.target.value)}
             >
               <option value="">{t('reg_birth_facility_placeholder')}</option>
-              {facilities.map((f) => (
+              {filteredFacilities.map((f) => (
                 <option key={f.facilityId} value={f.facilityId}>
-                  {f.name} — {f.region}
+                  {f.name}
+                  {f.district ? ` — ${f.district}` : ''}
                 </option>
               ))}
             </select>
           </Field>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field label={t('reg_region')}>
-              <input className="input" value={form.region} onChange={(e) => update('region', e.target.value)} />
-            </Field>
-            <Field label={t('reg_district')}>
-              <input className="input" value={form.district} onChange={(e) => update('district', e.target.value)} />
-            </Field>
-          </div>
 
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
