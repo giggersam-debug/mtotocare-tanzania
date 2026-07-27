@@ -8,4 +8,7 @@ export function formatNida(raw: string): string {
 }
 
 export const NIDA_PATTERN = /^\d{8}-\d{5}-\d{5}-\d{2}$/;
-export const NIDA_PLACEHOLDER = '19960216-12104-00001-23';
+
+// A literal format hint, not a real-looking example ID — avoids implying
+// any particular number (real or not) is a valid/expected value.
+export const NIDA_PLACEHOLDER = 'YYYYMMDD-XXXXX-XXXXX-XX';
